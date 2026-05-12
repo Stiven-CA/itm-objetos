@@ -2,7 +2,6 @@
  * api.js — Capa de comunicación con el servidor.
  * Principio SOLID — Responsabilidad Única: solo gestiona peticiones HTTP.
  * Patrón Module: exporta objetos con métodos agrupados por entidad.
- * Patrón Proxy: la función `peticion` centraliza autenticación y errores.
  */
 
 const URL_API = '/api';
@@ -21,7 +20,7 @@ const AlmacenUsuario = {
   limpiar:  () => localStorage.removeItem('itm_usuario'),
 };
 
-// ── Petición HTTP base ─────────────────────────────────────
+// ── Petición HTTP base ────────────────────────────────────
 async function peticion(metodo, ruta, cuerpo = null, esFormulario = false) {
   const encabezados = {};
   const token = TokenSesion.obtener();
@@ -80,7 +79,6 @@ export const Reportes = {
   crear:     (fd)             => peticion('POST',   '/reportes', fd, true),
   actualizar:(id, fd)         => peticion('PUT',    `/reportes/${id}`, fd, true),
   cancelar:        (id)      => peticion('DELETE',  `/reportes/${id}`),
-  eliminar:        (id)      => peticion('DELETE',  `/reportes/${id}`),
   revisar:         (id, d)   => peticion('POST',   `/reportes/${id}/revisar`, d),
   cambiarEstado:   (id, d)   => peticion('PUT',    `/reportes/${id}/estado`, d),
   eliminarForzado: (id)      => peticion('DELETE',  `/reportes/${id}/forzar`),
@@ -89,36 +87,28 @@ export const Reportes = {
 
 // ── Reclamaciones ─────────────────────────────────────────
 export const Reclamaciones = {
-  enviar:            (idRep, fd) => peticion('POST',  `/reclamaciones/reporte/${idRep}`, fd, true),
-  mias:              ()          => peticion('GET',   '/reclamaciones/mias'),
-  pendientes:        ()          => peticion('GET',   '/reclamaciones/pendientes'),
-  delReporte:        (id)        => peticion('GET',   `/reclamaciones/reporte/${id}`),
-  obtener:           (id)        => peticion('GET',   `/reclamaciones/${id}`),
-  revisar:           (id, d)     => peticion('POST',  `/reclamaciones/${id}/revisar`, d),
-  responderDirecta:  (id, d)     => peticion('POST',  `/reclamaciones/${id}/responder-directa`, d),
-  registrarEntrega:  (id, d)     => peticion('POST',  `/reclamaciones/${id}/entregar`, d),
-};
-
-// ── Chat ──────────────────────────────────────────────────
-export const Chat = {
-  obtenerConversacion: (idReporte) => peticion('GET',  `/chat/reporte/${idReporte}`),
-  enviarMensaje:       (idReporte, d) => peticion('POST', `/chat/reporte/${idReporte}`, d),
+  enviar:      (idRep, fd)   => peticion('POST',  `/reclamaciones/reporte/${idRep}`, fd, true),
+  mias:        ()            => peticion('GET',   '/reclamaciones/mias'),
+  pendientes:  ()            => peticion('GET',   '/reclamaciones/pendientes'),
+  delReporte:  (id)          => peticion('GET',   `/reclamaciones/reporte/${id}`),
+  revisar:     (id, d)       => peticion('POST',  `/reclamaciones/${id}/revisar`, d),
+  registrarEntrega: (id, d)  => peticion('POST',  `/reclamaciones/${id}/entregar`, d),
 };
 
 // ── Notificaciones ────────────────────────────────────────
 export const Notificaciones = {
-  listar:           (p = {}) => peticion('GET',  '/notificaciones?' + new URLSearchParams(p)),
-  cantidadNoLeidas: ()       => peticion('GET',  '/notificaciones/no-leidas'),
-  marcarTodasLeidas:()       => peticion('POST', '/notificaciones/marcar-todas-leidas'),
-  marcarLeida:      (id)     => peticion('POST', `/notificaciones/${id}/marcar-leida`),
+  listar:          (p = {}) => peticion('GET',  '/notificaciones?' + new URLSearchParams(p)),
+  cantidadNoLeidas:()       => peticion('GET',  '/notificaciones/no-leidas'),
+  marcarTodasLeidas:()      => peticion('POST', '/notificaciones/marcar-todas-leidas'),
+  marcarLeida:     (id)     => peticion('POST', `/notificaciones/${id}/marcar-leida`),
 };
 
 // ── Administración ────────────────────────────────────────
 export const Administracion = {
-  listarUsuarios:     ()      => peticion('GET',  '/admin/usuarios'),
-  buscarUsuarios:     (nombre)=> peticion('GET',  `/admin/usuarios/buscar?nombre=${encodeURIComponent(nombre)}`),
-  bloquearUsuario:    (id)    => peticion('POST', `/admin/usuarios/${id}/bloquear`),
-  desbloquearUsuario: (id)    => peticion('POST', `/admin/usuarios/${id}/desbloquear`),
+  listarUsuarios:    ()   => peticion('GET',  '/admin/usuarios'),
+  buscarUsuarios:    (nombre) => peticion('GET',  `/admin/usuarios/buscar?nombre=${encodeURIComponent(nombre)}`),
+  bloquearUsuario:   (id) => peticion('POST', `/admin/usuarios/${id}/bloquear`),
+  desbloquearUsuario:(id) => peticion('POST', `/admin/usuarios/${id}/desbloquear`),
 };
 
 export { TokenSesion, AlmacenUsuario };

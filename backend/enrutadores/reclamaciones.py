@@ -1,6 +1,6 @@
 # backend/enrutadores/reclamaciones.py
 from typing import List
-from fastapi import APIRouter, Depends, UploadFile, File, Form, HTTPException
+from fastapi import APIRouter, Depends, UploadFile, File, Form
 from sqlalchemy.orm import Session
 from backend.base_datos import obtener_sesion
 from backend.dependencias import obtener_usuario_actual, requerir_personal
@@ -60,32 +60,6 @@ def revisar_reclamacion(
     sesion: Session = Depends(obtener_sesion),
 ):
     return ServicioReclamacion(sesion).revisar_reclamacion(id_reclamacion, datos, personal)
-
-
-@enrutador.post("/{id_reclamacion}/responder-directa", response_model=EsquemaReclamacion)
-def responder_reclamacion_directa(
-    id_reclamacion: int,
-    datos: EsquemaRevisarReclamacion,
-    usuario: Usuario = Depends(obtener_usuario_actual),
-    sesion: Session = Depends(obtener_sesion),
-):
-    """Reportante acepta/rechaza directamente cuando no hay custodia."""
-    return ServicioReclamacion(sesion).responder_reclamacion_directa(id_reclamacion, datos, usuario)
-
-
-@enrutador.get("/{id_reclamacion}", response_model=EsquemaReclamacion)
-def obtener_reclamacion(
-    id_reclamacion: int,
-    usuario: Usuario = Depends(obtener_usuario_actual),
-    sesion: Session = Depends(obtener_sesion),
-):
-    """Obtiene una reclamación específica."""
-    from backend.repositorios.repositorio_reclamacion import RepositorioReclamacion
-    repo = RepositorioReclamacion(sesion)
-    rec  = repo.obtener_por_id(id_reclamacion)
-    if not rec:
-        raise HTTPException(404, "Reclamación no encontrada")
-    return rec
 
 
 @enrutador.post("/{id_reclamacion}/entregar", response_model=EsquemaReclamacion)

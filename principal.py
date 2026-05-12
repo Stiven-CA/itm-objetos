@@ -14,7 +14,7 @@ from fastapi.responses import FileResponse
 from backend.configuracion import obtener_configuracion
 from backend.base_datos import motor, Base
 import backend.modelos  # Registrar modelos para crear tablas
-from backend.enrutadores import auth, reportes, reclamaciones, notificaciones, admin, chat
+from backend.enrutadores import auth, reportes, reclamaciones, notificaciones, admin
 
 cfg = obtener_configuracion()
 
@@ -48,7 +48,6 @@ app.include_router(reportes.enrutador,       prefix="/api")
 app.include_router(reclamaciones.enrutador,  prefix="/api")
 app.include_router(notificaciones.enrutador, prefix="/api")
 app.include_router(admin.enrutador,          prefix="/api")
-app.include_router(chat.enrutador,           prefix="/api")
 
 # Archivos estáticos
 app.mount("/uploads", StaticFiles(directory=cfg.CARPETA_UPLOADS), name="uploads")

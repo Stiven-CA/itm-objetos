@@ -18,7 +18,6 @@ from backend.modelos.reporte import Reporte, HistorialReporte, EstadoObjeto, Tip
 from backend.modelos.notificacion import TipoNotificacion
 from backend.repositorios.repositorio_reporte import RepositorioReporte, RepositorioHistorial
 from backend.repositorios.repositorio_notificacion import RepositorioNotificacion
-from backend.repositorios.repositorio_usuario import RepositorioUsuario
 from backend.servicios.moderacion_ia import decidir_aprobacion
 from backend.esquemas.reporte import EsquemaCrearReporte, EsquemaActualizarReporte, EsquemaAccionAdmin, EsquemaCambioEstado
 
@@ -32,18 +31,8 @@ class ServicioReporte:
         self.repo          = RepositorioReporte(sesion)
         self.repo_historial = RepositorioHistorial(sesion)
         self.repo_notif    = RepositorioNotificacion(sesion)
-        self.repo_usu      = RepositorioUsuario(sesion)
 
     # ── Helpers privados ──────────────────────────────────────────
-
-    def _notificar_admins(self, tipo: TipoNotificacion, titulo: str, mensaje: str,
-                          id_reporte=None):
-        """Envía notificación a todos los administradores."""
-        for admin in self.repo_usu.obtener_admins():
-            self.repo_notif.crear_notificacion(
-                id_usuario=admin.id, tipo=tipo, titulo=titulo,
-                mensaje=mensaje, id_reporte=id_reporte,
-            )
 
     def _guardar_imagen(self, archivo: UploadFile, id_reporte: int) -> str:
         carpeta = os.path.join(cfg.CARPETA_UPLOADS, "reportes")
@@ -78,9 +67,9 @@ class ServicioReporte:
 
     def crear_reporte(self, datos: EsquemaCrearReporte, reportante: Usuario,
                       imagen: Optional[UploadFile] = None) -> Reporte:
-        """HU05/HU06 — Crear reporte. Siempre pendiente si admin disponible, IA fuera de horario."""
+        """HU05/HU06 — Crear reporte de objeto perdido o encontrado."""
         estado_inicial = EstadoObjeto.PERDIDO if datos.tipo_reporte == TipoReporte.PERDIDO else EstadoObjeto.ENCONTRADO
-
+        # Decidir aprobación: admin en horario → pendiente, fuera de horario → IA modera
         if reportante.rol == RolUsuario.ADMIN:
             aprobado_inicial = True
         else:
@@ -100,21 +89,6 @@ class ServicioReporte:
             reporte.ruta_imagen = self._guardar_imagen(imagen, reporte.id)
             self.repo.actualizar(reporte)
         self._registrar_historial(reporte, reportante, "Reporte creado")
-
-        # Notificar a todos los admins cada vez que se crea un reporte
-        tipo_aviso = "encontrado" if datos.tipo_reporte == TipoReporte.ENCONTRADO else "perdido"
-        estado_aviso = "aprobado automáticamente (IA/fuera de horario)" if aprobado_inicial else "pendiente de tu revisión"
-        self._notificar_admins(
-            tipo=TipoNotificacion.REPORTE_PENDIENTE,
-            titulo=f"Nuevo reporte {tipo_aviso} — {datos.titulo}",
-            mensaje=(
-                f"{reportante.nombre_completo} publicó un objeto {tipo_aviso}: '{datos.titulo}'.\n"
-                f"Categoría: {datos.categoria} | Sede: {datos.sede or 'No especificada'}\n"
-                f"Estado: {estado_aviso}."
-            ),
-            id_reporte=reporte.id,
-        )
-
         if datos.tipo_reporte == TipoReporte.PERDIDO:
             self._detectar_coincidencias(reporte)
         return reporte

@@ -21,12 +21,11 @@ class CategoriaObjeto(str, enum.Enum):
 
 
 class EstadoObjeto(str, enum.Enum):
-    PERDIDO               = "perdido"
-    ENCONTRADO            = "encontrado"
-    PENDIENTE_RECLAMACION = "pendiente_reclamacion"
-    RECLAMADO             = "reclamado"
-    ENTREGADO             = "entregado"
-    CANCELADO             = "cancelado"
+    PERDIDO    = "perdido"
+    ENCONTRADO = "encontrado"
+    RECLAMADO  = "reclamado"
+    ENTREGADO  = "entregado"
+    CANCELADO  = "cancelado"
 
 
 class TipoReporte(str, enum.Enum):

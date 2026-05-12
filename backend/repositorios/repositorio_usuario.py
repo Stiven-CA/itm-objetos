@@ -30,9 +30,3 @@ class RepositorioUsuario(RepositorioBase[Usuario]):
     def desbloquear_usuario(self, usuario: Usuario) -> Usuario:
         usuario.estado = EstadoUsuario.ACTIVO
         return self.actualizar(usuario)
-
-    def obtener_admins(self) -> List[Usuario]:
-        """Retorna todos los usuarios con rol ADMIN para enviarles notificaciones."""
-        from backend.modelos.usuario import RolUsuario
-        return (self.sesion.query(Usuario)
-                .filter(Usuario.rol == RolUsuario.ADMIN).all())

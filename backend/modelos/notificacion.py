@@ -7,17 +7,14 @@ from backend.base_datos import Base
 
 
 class TipoNotificacion(str, enum.Enum):
-    COINCIDENCIA          = "coincidencia"
-    RECLAMO_NUEVO         = "reclamo_nuevo"
-    RECLAMO_APROBADO      = "reclamo_aprobado"
-    RECLAMO_RECHAZADO     = "reclamo_rechazado"
-    ESTADO_CAMBIADO       = "estado_cambiado"
-    REPORTE_APROBADO      = "reporte_aprobado"
-    REPORTE_RECHAZADO     = "reporte_rechazado"
-    ENTREGA_LISTA         = "entrega_lista"
-    REPORTE_PENDIENTE     = "reporte_pendiente"     # Admin: nuevo reporte esperando revisión
-    MENSAJE_DIRECTO       = "mensaje_directo"        # Chat directo entre partes
-    LO_ENCONTRE           = "lo_encontre"            # Alguien dice que encontró mi objeto perdido
+    COINCIDENCIA    = "coincidencia"
+    RECLAMO_NUEVO   = "reclamo_nuevo"
+    RECLAMO_APROBADO = "reclamo_aprobado"
+    RECLAMO_RECHAZADO = "reclamo_rechazado"
+    ESTADO_CAMBIADO = "estado_cambiado"
+    REPORTE_APROBADO = "reporte_aprobado"
+    REPORTE_RECHAZADO = "reporte_rechazado"
+    ENTREGA_LISTA   = "entrega_lista"
 
 
 class Notificacion(Base):
