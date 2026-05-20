@@ -7,6 +7,8 @@ Principio SOLID:
 Implementa: HU01, HU04, HU11, HU34
 """
 from datetime import datetime, timedelta
+import random
+import string
 from typing import Optional
 from jose import JWTError, jwt
 from passlib.context import CryptContext
@@ -60,6 +62,7 @@ class ServicioAuth:
             nombre_completo=datos.nombre_completo,
             correo=datos.correo,
             nombre_usuario=datos.nombre_usuario,
+            numero_documento=datos.numero_documento,
             contrasena_cifrada=self.cifrar_contrasena(datos.contrasena),
             rol=datos.rol,
         )
@@ -82,6 +85,14 @@ class ServicioAuth:
         if not self.verificar_contrasena(actual, usuario.contrasena_cifrada):
             raise HTTPException(400, "La contraseña actual es incorrecta")
         usuario.contrasena_cifrada = self.cifrar_contrasena(nueva)
+        self.repo.actualizar(usuario)
+        return True
+
+    def recuperar_contrasena(self, correo: str, numero_documento: str, nueva_contrasena: str) -> bool:
+        usuario = self.repo.buscar_por_correo(correo)
+        if not usuario or usuario.numero_documento != numero_documento:
+            raise HTTPException(400, "Correo o documento incorrecto")
+        usuario.contrasena_cifrada = self.cifrar_contrasena(nueva_contrasena)
         self.repo.actualizar(usuario)
         return True
 

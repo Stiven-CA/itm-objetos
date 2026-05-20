@@ -35,6 +35,9 @@ class Usuario(Base):
     creado_en             = Column(DateTime, default=datetime.utcnow)
     actualizado_en        = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     ultimo_acceso         = Column(DateTime, nullable=True)
+    numero_documento      = Column(String(30), nullable=True)
+    codigo_recuperacion   = Column(String(10), nullable=True)
+    codigo_recuperacion_exp = Column(DateTime, nullable=True)
 
     reportes       = relationship("Reporte", back_populates="reportante", foreign_keys="Reporte.id_reportante")
     reclamaciones  = relationship("Reclamacion", back_populates="reclamante", foreign_keys="Reclamacion.id_reclamante")

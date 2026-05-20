@@ -1127,11 +1127,8 @@ function renderAuth(tipo) {
       <span class="ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg></span>
       <input id="inputUsr" type="text" placeholder="Nombre de usuario" autocomplete="username" value="${usuario}">
     </div>
-    <div style="margin-bottom:.7rem">
-      <a class="auth-link-olvido">¿Olvidaste tu correo electrónico?</a>
-    </div>
     <div class="auth-recuerda">Recuerda</div>
-    <p class="auth-ayuda">Tu usuario es: primer nombre + primer apellido + números<br><em>ej: juanperez323298</em></p>
+    <p class="auth-ayuda">Tu usuario es tu correo institucional sin @correo.itm.edu.co<br><em>ej: juanperez323298</em></p>
     <div id="err1"></div>
     <div style="overflow:hidden">
       <button class="auth-btn-accion" id="btnSig">Siguiente</button>
@@ -1149,12 +1146,12 @@ function renderAuth(tipo) {
     <div class="auth-usuario-chip">Usuario: ${usuario}</div>
     <div class="auth-campo-wrap">
       <span class="ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg></span>
-      <input id="inputPwd" type="password" placeholder="Número de documento (solo números)" autocomplete="current-password" inputmode="numeric" pattern="[0-9]*">
+      <input id="inputPwd" type="password" placeholder="Contraseña" autocomplete="current-password">
     </div>
     <div class="auth-recuerda">Recuerda</div>
-    <p class="auth-ayuda">Tu contraseña es tu número de documento de identidad.<br><em>Solo se aceptan números.</em></p>
+    <p class="auth-ayuda">Ingresa tu contraseña. Puede contener letras y números.</p>
     <div style="font-size:.78rem;color:var(--text3);margin-bottom:1rem">
-      ¿Olvidaste tu contraseña? <a href="#" style="color:var(--purple);font-weight:500">Recupérala aquí</a>
+      ¿Olvidaste tu contraseña? <a id="linkRecuperar" style="color:var(--purple);font-weight:500;cursor:pointer">Recupérala aquí</a>
     </div>
     <div id="err2"></div>
     <div style="overflow:hidden">
@@ -1164,25 +1161,30 @@ function renderAuth(tipo) {
   const bindAuth = () => {
     if (paso === 1) {
       document.getElementById('inputUsr')?.addEventListener('keydown', e => { if(e.key==='Enter') document.getElementById('btnSig')?.click(); });
-      document.getElementById('btnSig')?.addEventListener('click', () => {
+      document.getElementById('btnSig')?.addEventListener('click', async () => {
         const val = document.getElementById('inputUsr')?.value.trim();
         const err = document.getElementById('err1');
+        const btn = document.getElementById('btnSig');
         if (!val) { if(err){err.className='auth-error';err.textContent='Ingresa tu nombre de usuario.';} return; }
-        usuario = val; paso = 2; mount();
-        setTimeout(() => document.getElementById('inputPwd')?.focus(), 50);
+        botonCargando(btn, true);
+        try {
+          await Autenticacion.verificarUsuario(val);
+          usuario = val; paso = 2; mount();
+          setTimeout(() => document.getElementById('inputPwd')?.focus(), 50);
+        } catch(_) {
+          if(err){err.className='auth-error';err.textContent='Este usuario no existe. ¿Deseas registrarte?';}
+          botonCargando(btn, false);
+        }
       });
     } else {
       document.getElementById('btnVolver')?.addEventListener('click', () => { paso = 1; mount(); });
       document.getElementById('inputPwd')?.addEventListener('keydown', e => { if(e.key==='Enter') document.getElementById('btnLogin')?.click(); });
-      document.getElementById('inputPwd')?.addEventListener('input', e => {
-        e.target.value = e.target.value.replace(/[^0-9]/g, '');
-      });
+      document.getElementById('linkRecuperar')?.addEventListener('click', () => abrirModalRecuperacion());
       document.getElementById('btnLogin')?.addEventListener('click', async () => {
         const btn = document.getElementById('btnLogin');
         const pwd = document.getElementById('inputPwd')?.value;
         const err = document.getElementById('err2');
-        if (!pwd) { if(err){err.className='auth-error';err.textContent='Ingresa tu número de documento.';} return; }
-        if (!/^[0-9]+$/.test(pwd)) { if(err){err.className='auth-error';err.textContent='La contraseña solo debe contener números (documento de identidad).';} return; }
+        if (!pwd) { if(err){err.className='auth-error';err.textContent='Ingresa tu contraseña.';} return; }
         botonCargando(btn, true);
         if(err) err.textContent='';
         try {
@@ -1204,6 +1206,56 @@ function renderAuth(tipo) {
   mount();
 }
 
+function abrirModalRecuperacion() {
+  const { cerrar } = crearModal({
+    titulo: 'Recuperar contraseña',
+    contenido: `
+      <p style="font-size:.85rem;color:var(--text3);margin-bottom:1.2rem">Ingresa tu correo institucional, número de documento y tu nueva contraseña.</p>
+      <div class="campo-grupo">
+        <label class="campo-label req">Correo institucional</label>
+        <input id="recCorreo" type="email" class="campo-input" placeholder="juan.perez@correo.itm.edu.co" required>
+      </div>
+      <div class="campo-grupo">
+        <label class="campo-label req">Número de documento</label>
+        <input id="recDoc" type="text" class="campo-input" placeholder="Número de documento" required>
+      </div>
+      <div class="campo-grupo">
+        <label class="campo-label req">Nueva contraseña</label>
+        <input id="recNuevaPwd" type="password" class="campo-input" placeholder="Mínimo 8 caracteres" required>
+      </div>
+      <div id="errRec" style="margin-bottom:.5rem"></div>`,
+    pie: `<button class="btn btn-contorno btn-sm" id="btnCancelarRec">Cancelar</button>
+          <button class="btn btn-purple btn-sm" id="btnEnviarRec">Cambiar contraseña</button>`,
+  });
+  setTimeout(() => {
+    document.getElementById('btnCancelarRec')?.addEventListener('click', cerrar);
+    document.getElementById('btnEnviarRec')?.addEventListener('click', async () => {
+      const correo = document.getElementById('recCorreo')?.value.trim();
+      const doc = document.getElementById('recDoc')?.value.trim();
+      const nuevaPwd = document.getElementById('recNuevaPwd')?.value;
+      const err = document.getElementById('errRec');
+      if (!correo || !doc || !nuevaPwd) { if(err){err.className='auth-error';err.textContent='Completa todos los campos.';} return; }
+      if (!correo.endsWith('@correo.itm.edu.co')) { if(err){err.className='auth-error';err.textContent='Ingresa un correo institucional válido.';} return; }
+      if (nuevaPwd.length < 8) { if(err){err.className='auth-error';err.textContent='La contraseña debe tener mínimo 8 caracteres.';} return; }
+      const btn = document.getElementById('btnEnviarRec');
+      botonCargando(btn, true);
+      try {
+        await fetch('/api/auth/recuperar-contrasena', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ correo, numero_documento: doc, nueva_contrasena: nuevaPwd }),
+        }).then(r => { if(!r.ok) return r.json().then(d=>{ throw new Error(d.detail||'Correo o documento incorrecto.'); }); return r.json(); });
+        cerrar();
+        mostrarToast('Contraseña actualizada. Inicia sesión.', 'success');
+        navegar('iniciar-sesion');
+      } catch(e) {
+        if(err){err.className='auth-error';err.textContent=e.message;}
+        botonCargando(btn, false);
+      }
+    });
+  }, 50);
+}
+
 function renderRegistro() {
   document.getElementById('aplicacion').innerHTML = `
     <div class="auth-registro-bg">
@@ -1222,8 +1274,8 @@ function renderRegistro() {
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
             <div class="campo-grupo">
-              <label class="campo-label req">Usuario</label>
-              <input name="nombre_usuario" class="campo-input" placeholder="juan.perez" required>
+              <label class="campo-label req">Documento</label>
+              <input name="numero_documento" type="text" class="campo-input" placeholder="Número de documento" required>
             </div>
             <div class="campo-grupo">
               <label class="campo-label req">Rol</label>
@@ -1250,11 +1302,18 @@ function renderRegistro() {
     e.preventDefault();
     const btn = document.getElementById('btnCrearCuenta');
     const err = document.getElementById('errReg');
+    const fd = new FormData(e.target);
+    const correo = (fd.get('correo') || '').trim();
+    if (!correo.endsWith('@correo.itm.edu.co')) {
+      if(err){err.className='auth-error';err.textContent='No eres parte de esta institución. Solo se aceptan correos @correo.itm.edu.co';}
+      return;
+    }
+    const datos = Object.fromEntries(fd.entries());
+    datos.nombre_usuario = correo.replace('@correo.itm.edu.co', '');
     botonCargando(btn, true);
     if(err) err.textContent='';
-    const fd = new FormData(e.target);
     try {
-      await Autenticacion.registrar(Object.fromEntries(fd.entries()));
+      await Autenticacion.registrar(datos);
       mostrarToast('Cuenta creada. Inicia sesión.','success');
       window.location.hash = '#iniciar-sesion';
       navegar('iniciar-sesion');

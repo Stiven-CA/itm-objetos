@@ -34,6 +34,9 @@ async function peticion(metodo, ruta, cuerpo = null, esFormulario = false) {
   });
 
   if (respuesta.status === 401) {
+    if (ruta === '/auth/iniciar-sesion') {
+      throw new Error('Contraseña incorrecta.');
+    }
     TokenSesion.limpiar();
     AlmacenUsuario.limpiar();
     window.location.hash = '#iniciar-sesion';
@@ -61,6 +64,7 @@ export const Autenticacion = {
   obtenerPerfil:     ()      => peticion('GET',  '/auth/yo'),
   actualizarPerfil:  (datos) => peticion('PUT',  '/auth/yo', datos),
   cambiarContrasena: (datos) => peticion('POST', '/auth/cambiar-contrasena', datos),
+  verificarUsuario:  (u)    => peticion('GET',  `/auth/verificar-usuario/${encodeURIComponent(u)}`),
 };
 
 // ── Reportes ──────────────────────────────────────────────

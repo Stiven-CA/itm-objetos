@@ -16,6 +16,7 @@ class EsquemaRegistro(BaseModel):
     nombre_completo: str
     correo: EmailStr
     nombre_usuario: str
+    numero_documento: str
     contrasena: str
     rol: RolUsuario = RolUsuario.ESTUDIANTE
 
@@ -23,7 +24,7 @@ class EsquemaRegistro(BaseModel):
     @classmethod
     def validar_correo_institucional(cls, valor: str) -> str:
         if not valor.endswith(f"@{cfg.DOMINIO_INSTITUCIONAL}"):
-            raise ValueError(f"Solo se permiten correos @{cfg.DOMINIO_INSTITUCIONAL}")
+            raise ValueError("No eres parte de esta institución. Solo se aceptan correos @correo.itm.edu.co")
         return valor.lower()
 
     @field_validator("contrasena")
@@ -81,3 +82,29 @@ class EsquemaToken(BaseModel):
     token_acceso: str
     tipo_token: str = "bearer"
     usuario: EsquemaUsuario
+
+
+class EsquemaRecuperarContrasena(BaseModel):
+    correo: EmailStr
+    numero_documento: str
+    nueva_contrasena: str
+
+    @field_validator("nueva_contrasena")
+    @classmethod
+    def validar_nueva(cls, valor: str) -> str:
+        if len(valor) < 8:
+            raise ValueError("Mínimo 8 caracteres")
+        return valor
+
+
+class EsquemaConfirmarRecuperacion(BaseModel):
+    correo: EmailStr
+    numero_documento: str
+    nueva_contrasena: str
+
+    @field_validator("nueva_contrasena")
+    @classmethod
+    def validar_nueva(cls, valor: str) -> str:
+        if len(valor) < 8:
+            raise ValueError("Mínimo 8 caracteres")
+        return valor
