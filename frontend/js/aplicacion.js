@@ -260,23 +260,23 @@ function renderFiltros() {
       <div class="sep-filtro"></div>
       <select class="select-filtro" id="filtroCategoria">
         <option value="">Todas las categorías</option>
-        <option value="electronico">Electrónico</option>
-        <option value="documento">Documento</option>
-        <option value="accesorio">Accesorio</option>
-        <option value="ropa">Ropa</option>
-        <option value="maleta">Maleta/Mochila</option>
-        <option value="llaves">Llaves</option>
-        <option value="gafas">Gafas</option>
-        <option value="libro">Libros</option>
-        <option value="otro">Otro</option>
+        <option value="electronico" ${f.categoria==='electronico'?'selected':''}>Electrónico</option>
+        <option value="documento"   ${f.categoria==='documento'?'selected':''}>Documento</option>
+        <option value="accesorio"   ${f.categoria==='accesorio'?'selected':''}>Accesorio</option>
+        <option value="ropa"        ${f.categoria==='ropa'?'selected':''}>Ropa</option>
+        <option value="maleta"      ${f.categoria==='maleta'?'selected':''}>Maleta/Mochila</option>
+        <option value="llaves"      ${f.categoria==='llaves'?'selected':''}>Llaves</option>
+        <option value="gafas"       ${f.categoria==='gafas'?'selected':''}>Gafas</option>
+        <option value="libro"       ${f.categoria==='libro'?'selected':''}>Libros</option>
+        <option value="otro"        ${f.categoria==='otro'?'selected':''}>Otro</option>
       </select>
       <select class="select-filtro" id="filtroSede">
         <option value="">Todas las sedes</option>
-        <option value="Sede Robledo">Sede Robledo</option>
-        <option value="Sede Fraternidad">Sede Fraternidad</option>
-        <option value="Sede Floresta">Sede Floresta</option>
-        <option value="Sede Prado">Sede Prado</option>
-        <option value="Sede Castilla">Sede Castilla</option>
+        <option value="Sede Robledo"       ${f.sede==='Sede Robledo'?'selected':''}>Sede Robledo</option>
+        <option value="Sede Fraternidad"   ${f.sede==='Sede Fraternidad'?'selected':''}>Sede Fraternidad</option>
+        <option value="Sede Floresta"      ${f.sede==='Sede Floresta'?'selected':''}>Sede Floresta</option>
+        <option value="Sede Prado"         ${f.sede==='Sede Prado'?'selected':''}>Sede Prado</option>
+        <option value="Sede Castilla"      ${f.sede==='Sede Castilla'?'selected':''}>Sede Castilla</option>
       </select>
       <input type="search" id="campoBusqueda" placeholder="Buscar objeto..."
         style="padding:.3rem .75rem;border:1px solid var(--border);border-radius:var(--radius-full);font-size:.79rem;outline:none;transition:border-color .15s"
@@ -1258,42 +1258,63 @@ function abrirModalRecuperacion() {
 
 function renderRegistro() {
   document.getElementById('aplicacion').innerHTML = `
-    <div class="auth-registro-bg">
-      <div class="registro-card">
-        <div style="font-size:.73rem;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.75rem">ITM — Institución Universitaria</div>
-        <h1 class="registro-titulo">Crear cuenta</h1>
-        <p class="registro-sub">Usa tu correo institucional @correo.itm.edu.co</p>
-        <form id="formRegistro">
-          <div class="campo-grupo">
-            <label class="campo-label req">Nombre completo</label>
-            <input name="nombre_completo" class="campo-input" placeholder="Juan Pérez García" required>
+    <div class="auth-bg">
+      <div class="auth-card" style="max-width:700px">
+        <div class="auth-panel-logo">
+          <div class="auth-logo-wrap">
+            <div class="auth-logo-nombre">ITM</div>
+            <div class="auth-logo-sub">Institución<br>Universitaria</div>
           </div>
-          <div class="campo-grupo">
-            <label class="campo-label req">Correo institucional</label>
-            <input name="correo" type="email" class="campo-input" placeholder="juan.perez@correo.itm.edu.co" required>
-          </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+        </div>
+        <div class="auth-panel-form" id="authFormReg" style="overflow-y:auto">
+          <h2 class="auth-titulo">Crear cuenta</h2>
+          <p style="font-size:.79rem;color:var(--text3);margin-bottom:1rem">Usa tu correo institucional @correo.itm.edu.co</p>
+          <form id="formRegistro">
             <div class="campo-grupo">
-              <label class="campo-label req">Documento</label>
-              <input name="numero_documento" type="text" class="campo-input" placeholder="Número de documento" required>
+              <label class="campo-label req">Nombre completo</label>
+              <div class="auth-campo-wrap">
+                <span class="ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg></span>
+                <input name="nombre_completo" type="text" placeholder="Juan Pérez García" required>
+              </div>
             </div>
             <div class="campo-grupo">
-              <label class="campo-label req">Rol</label>
-              <select name="rol" class="campo-select">
-                <option value="estudiante">Estudiante</option>
-                <option value="profesor">Profesor</option>
-              </select>
+              <label class="campo-label req">Correo institucional</label>
+              <div class="auth-campo-wrap">
+                <span class="ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg></span>
+                <input name="correo" type="email" placeholder="juan.perez@correo.itm.edu.co" required>
+              </div>
             </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem">
+              <div class="campo-grupo">
+                <label class="campo-label req">Documento</label>
+                <div class="auth-campo-wrap">
+                  <span class="ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="14" x="3" y="5" rx="2"/><path d="M8 10h8M8 14h5"/></svg></span>
+                  <input name="numero_documento" type="text" placeholder="Número de documento" required>
+                </div>
+              </div>
+              <div class="campo-grupo">
+                <label class="campo-label req">Rol</label>
+                <select name="rol" class="campo-select">
+                  <option value="estudiante">Estudiante</option>
+                  <option value="profesor">Profesor</option>
+                </select>
+              </div>
+            </div>
+            <div class="campo-grupo">
+              <label class="campo-label req">Contraseña</label>
+              <div class="auth-campo-wrap">
+                <span class="ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
+                <input name="contrasena" type="password" placeholder="Mínimo 8 caracteres" autocomplete="new-password" required>
+              </div>
+            </div>
+            <div id="errReg" style="margin-bottom:.75rem"></div>
+            <div style="overflow:hidden">
+              <button type="submit" class="auth-btn-accion" id="btnCrearCuenta">Crear cuenta</button>
+            </div>
+          </form>
+          <div class="auth-footer-link">
+            ¿Ya tienes cuenta? <a href="#iniciar-sesion">Iniciar sesión</a>
           </div>
-          <div class="campo-grupo">
-            <label class="campo-label req">Contraseña</label>
-            <input name="contrasena" type="password" class="campo-input" placeholder="Mínimo 8 caracteres" autocomplete="new-password" required>
-          </div>
-          <div id="errReg" style="margin-bottom:.75rem"></div>
-          <button type="submit" class="registro-btn" id="btnCrearCuenta">Crear cuenta</button>
-        </form>
-        <div style="text-align:center;margin-top:1.25rem;font-size:.82rem;color:var(--text3)">
-          ¿Ya tienes cuenta? <a href="#iniciar-sesion" style="color:var(--purple);font-weight:600">Iniciar sesión</a>
         </div>
       </div>
     </div>`;
