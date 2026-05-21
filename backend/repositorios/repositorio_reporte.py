@@ -16,6 +16,7 @@ class RepositorioReporte(RepositorioBase[Reporte]):
             self.sesion.query(Reporte)
             .options(joinedload(Reporte.reportante))
             .filter(Reporte.aprobado == True)
+            .filter(Reporte.estado != EstadoObjeto.CANCELADO)
         )
         if texto:
             consulta = consulta.filter(or_(

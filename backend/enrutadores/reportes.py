@@ -163,6 +163,8 @@ async def editar_reporte_admin(
     sede: Optional[SedeUniversitaria] = Form(None),
     lugar_especifico: Optional[str] = Form(None),
     punto_custodia: Optional[str] = Form(None),
+    hora_ocurrencia: Optional[str] = Form(None),
+    imagen: Optional[UploadFile] = File(None),
     admin: Usuario = Depends(requerir_admin),
     sesion: Session = Depends(obtener_sesion),
 ):
@@ -170,6 +172,6 @@ async def editar_reporte_admin(
     datos = EsquemaActualizarReporte(
         titulo=titulo, categoria=categoria, descripcion=descripcion,
         ubicacion=ubicacion, sede=sede, lugar_especifico=lugar_especifico,
-        punto_custodia=punto_custodia,
+        punto_custodia=punto_custodia, hora_ocurrencia=hora_ocurrencia,
     )
-    return ServicioReporte(sesion).actualizar_reporte(id_reporte, datos, admin)
+    return ServicioReporte(sesion).actualizar_reporte(id_reporte, datos, admin, imagen)

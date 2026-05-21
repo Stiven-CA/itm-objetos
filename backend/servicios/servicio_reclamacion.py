@@ -18,6 +18,7 @@ from backend.modelos.notificacion import TipoNotificacion
 from backend.repositorios.repositorio_reclamacion import RepositorioReclamacion
 from backend.repositorios.repositorio_reporte import RepositorioReporte
 from backend.repositorios.repositorio_notificacion import RepositorioNotificacion
+from backend.repositorios.repositorio_usuario import RepositorioUsuario
 from backend.esquemas.reclamacion import EsquemaCrearReclamacion, EsquemaRevisarReclamacion, EsquemaRegistrarEntrega
 
 cfg = obtener_configuracion()
@@ -30,6 +31,7 @@ class ServicioReclamacion:
         self.repo       = RepositorioReclamacion(sesion)
         self.repo_rep   = RepositorioReporte(sesion)
         self.repo_notif = RepositorioNotificacion(sesion)
+        self.repo_usr   = RepositorioUsuario(sesion)
 
     def enviar_reclamacion(self, id_reporte: int, datos: EsquemaCrearReclamacion,
                            reclamante: Usuario, evidencia: UploadFile = None) -> Reclamacion:
@@ -69,6 +71,14 @@ class ServicioReclamacion:
             mensaje=f"{reclamante.nombre_completo} quiere reclamar tu objeto '{reporte.titulo}'.",
             id_reporte=id_reporte, id_reclamo=reclamacion.id,
         )
+        # Notificar a todos los admins
+        for admin in self.repo_usr.obtener_admins():
+            self.repo_notif.crear_notificacion(
+                id_usuario=admin.id, tipo=TipoNotificacion.RECLAMO_NUEVO,
+                titulo="Nueva reclamación pendiente",
+                mensaje=f"{reclamante.nombre_completo} reclama el objeto '{reporte.titulo}'. Revisa en Gestión de reclamaciones.",
+                id_reporte=id_reporte, id_reclamo=reclamacion.id,
+            )
         return reclamacion
 
     def revisar_reclamacion(self, id_reclamacion: int, datos: EsquemaRevisarReclamacion,

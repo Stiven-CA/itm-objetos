@@ -23,11 +23,29 @@ class EsquemaRegistrarEntrega(BaseModel):
     notas_entrega: Optional[str] = None
 
 
-class InfoReclamante(BaseModel):
+class InfoPersona(BaseModel):
     id: int
     nombre_completo: str
     correo: str
     nombre_usuario: str
+    model_config = {"from_attributes": True}
+
+
+# Alias para compatibilidad
+InfoReclamante = InfoPersona
+
+
+class InfoReporteReclamacion(BaseModel):
+    id: int
+    titulo: str
+    descripcion: str
+    tipo_reporte: str
+    sede: Optional[str]
+    lugar_especifico: Optional[str]
+    ruta_imagen: Optional[str]
+    punto_custodia: Optional[str]
+    hora_ocurrencia: Optional[str]
+    reportante: Optional[InfoPersona]
     model_config = {"from_attributes": True}
 
 
@@ -39,10 +57,12 @@ class EsquemaReclamacion(BaseModel):
     respuesta_1: Optional[str]
     respuesta_2: Optional[str]
     respuesta_3: Optional[str]
+    ruta_evidencia: Optional[str]
     motivo_rechazo: Optional[str]
     nombre_receptor: Optional[str]
     fecha_entrega: Optional[datetime]
     creado_en: datetime
     actualizado_en: datetime
-    reclamante: InfoReclamante
+    reclamante: InfoPersona
+    reporte: Optional[InfoReporteReclamacion]
     model_config = {"from_attributes": True}

@@ -25,6 +25,7 @@ class EsquemaActualizarReporte(BaseModel):
     sede: Optional[SedeUniversitaria] = None
     lugar_especifico: Optional[str] = None
     punto_custodia: Optional[str] = None
+    hora_ocurrencia: Optional[str] = None
 
 
 class InfoReportante(BaseModel):

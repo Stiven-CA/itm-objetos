@@ -66,9 +66,11 @@ class Reporte(Base):
 
     reportante    = relationship("Usuario", back_populates="reportes", foreign_keys=[id_reportante])
     aprobado_por  = relationship("Usuario", foreign_keys=[id_aprobado_por])
-    reclamaciones = relationship("Reclamacion", back_populates="reporte")
-    historial     = relationship("HistorialReporte", back_populates="reporte",
-                                 order_by="HistorialReporte.cambiado_en.desc()")
+    reclamaciones  = relationship("Reclamacion", back_populates="reporte", cascade="all, delete-orphan")
+    historial      = relationship("HistorialReporte", back_populates="reporte",
+                                  order_by="HistorialReporte.cambiado_en.desc()", cascade="all, delete-orphan")
+    notificaciones = relationship("Notificacion", foreign_keys="Notificacion.id_reporte_rel",
+                                  cascade="all, delete-orphan")
 
     def __repr__(self):
         return f"<Reporte {self.titulo} [{self.estado}]>"

@@ -1,6 +1,6 @@
 # backend/repositorios/repositorio_reclamacion.py
 from typing import List
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.orm import Session, joinedload, contains_eager
 from backend.modelos.reclamacion import Reclamacion, EstadoReclamacion
 from backend.repositorios.base import RepositorioBase
 
@@ -22,8 +22,13 @@ class RepositorioReclamacion(RepositorioBase[Reclamacion]):
                 .order_by(Reclamacion.creado_en.desc()).all())
 
     def obtener_pendientes(self) -> List[Reclamacion]:
+        from backend.modelos.reporte import Reporte
+        from backend.modelos.usuario import Usuario
         return (self.sesion.query(Reclamacion)
-                .options(joinedload(Reclamacion.reclamante), joinedload(Reclamacion.reporte))
+                .options(
+                    joinedload(Reclamacion.reclamante),
+                    joinedload(Reclamacion.reporte).joinedload(Reporte.reportante),
+                )
                 .filter(Reclamacion.estado == EstadoReclamacion.PENDIENTE)
                 .order_by(Reclamacion.creado_en.asc()).all())
 

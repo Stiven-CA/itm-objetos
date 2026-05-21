@@ -15,6 +15,9 @@ const estado = {
 
 /* ── Navegación ────────────────────────────────────── */
 function navegar(vista, params = {}) {
+  document.querySelectorAll('.fondo-modal').forEach(m => m.remove());
+  document.getElementById('sbOverlay')?.remove();
+  document.getElementById('sidebar')?.classList.remove('abierta');
   estado.vista = vista;
   Object.assign(estado.filtros, params);
   renderApp();
@@ -56,7 +59,10 @@ function renderApp() {
   renderFooter();
 
   /* FAB reportar */
-  document.querySelectorAll('.btn-fab,.fab-menu').forEach(b => b.remove());
+  document.querySelectorAll('.btn-fab,.fab-menu').forEach(b => { b._removeHandler?.(); b.remove(); });
+  document.querySelectorAll('.fondo-modal').forEach(m => m.remove());
+  document.getElementById('sbOverlay')?.remove();
+  document.getElementById('sidebar')?.classList.remove('abierta');
   if (estado.usuario) {
     const fab = document.createElement('div');
     fab.className = 'btn-fab';
@@ -160,6 +166,8 @@ function renderSidebar() {
 
   el.querySelectorAll('.sidebar-item[data-vista]').forEach(i => {
     i.addEventListener('click', () => {
+      document.getElementById('sbOverlay')?.remove();
+      document.getElementById('sidebar')?.classList.remove('abierta');
       estado.filtros = { tipo_reporte:'', categoria:'', sede:'', busqueda:'' };
       navegar(i.dataset.vista);
     });
@@ -260,23 +268,23 @@ function renderFiltros() {
       <div class="sep-filtro"></div>
       <select class="select-filtro" id="filtroCategoria">
         <option value="">Todas las categorías</option>
-        <option value="electronico" ${f.categoria==='electronico'?'selected':''}>Electrónico</option>
-        <option value="documento"   ${f.categoria==='documento'?'selected':''}>Documento</option>
-        <option value="accesorio"   ${f.categoria==='accesorio'?'selected':''}>Accesorio</option>
-        <option value="ropa"        ${f.categoria==='ropa'?'selected':''}>Ropa</option>
-        <option value="maleta"      ${f.categoria==='maleta'?'selected':''}>Maleta/Mochila</option>
-        <option value="llaves"      ${f.categoria==='llaves'?'selected':''}>Llaves</option>
-        <option value="gafas"       ${f.categoria==='gafas'?'selected':''}>Gafas</option>
-        <option value="libro"       ${f.categoria==='libro'?'selected':''}>Libros</option>
-        <option value="otro"        ${f.categoria==='otro'?'selected':''}>Otro</option>
+        <option value="electronico">Electrónico</option>
+        <option value="documento">Documento</option>
+        <option value="accesorio">Accesorio</option>
+        <option value="ropa">Ropa</option>
+        <option value="maleta">Maleta/Mochila</option>
+        <option value="llaves">Llaves</option>
+        <option value="gafas">Gafas</option>
+        <option value="libro">Libros</option>
+        <option value="otro">Otro</option>
       </select>
       <select class="select-filtro" id="filtroSede">
         <option value="">Todas las sedes</option>
-        <option value="Sede Robledo"       ${f.sede==='Sede Robledo'?'selected':''}>Sede Robledo</option>
-        <option value="Sede Fraternidad"   ${f.sede==='Sede Fraternidad'?'selected':''}>Sede Fraternidad</option>
-        <option value="Sede Floresta"      ${f.sede==='Sede Floresta'?'selected':''}>Sede Floresta</option>
-        <option value="Sede Prado"         ${f.sede==='Sede Prado'?'selected':''}>Sede Prado</option>
-        <option value="Sede Castilla"      ${f.sede==='Sede Castilla'?'selected':''}>Sede Castilla</option>
+        <option value="Sede Robledo">Sede Robledo</option>
+        <option value="Sede Fraternidad">Sede Fraternidad</option>
+        <option value="Sede Floresta">Sede Floresta</option>
+        <option value="Sede Prado">Sede Prado</option>
+        <option value="Sede Castilla">Sede Castilla</option>
       </select>
       <input type="search" id="campoBusqueda" placeholder="Buscar objeto..."
         style="padding:.3rem .75rem;border:1px solid var(--border);border-radius:var(--radius-full);font-size:.79rem;outline:none;transition:border-color .15s"
@@ -284,18 +292,23 @@ function renderFiltros() {
         onfocus="this.style.borderColor='var(--purple)'" onblur="this.style.borderColor='var(--border)'">
     </div>`;
 
+  const selCat  = document.getElementById('filtroCategoria');
+  const selSede = document.getElementById('filtroSede');
+  if (selCat  && f.categoria) selCat.value  = f.categoria;
+  if (selSede && f.sede)      selSede.value = f.sede;
+
   el.querySelectorAll('.tab-filtro').forEach(t => {
-    t.addEventListener('click', () => { estado.filtros.tipo_reporte = t.dataset.tipo || ''; navegar('inicio'); });
+    t.addEventListener('click', () => { estado.filtros.tipo_reporte = t.dataset.tipo || ''; estado.vista = 'inicio'; renderApp(); });
   });
-  document.getElementById('filtroCategoria')?.addEventListener('change', e => { estado.filtros.categoria = e.target.value; navegar('inicio'); });
-  document.getElementById('filtroSede')?.addEventListener('change',     e => { estado.filtros.sede      = e.target.value; navegar('inicio'); });
+  selCat?.addEventListener('change',  e => { estado.filtros.categoria = e.target.value; estado.vista = 'inicio'; renderApp(); });
+  selSede?.addEventListener('change', e => { estado.filtros.sede      = e.target.value; estado.vista = 'inicio'; renderApp(); });
 }
 
 function renderBusqueda() {
   let t;
   document.getElementById('campoBusqueda')?.addEventListener('input', e => {
     clearTimeout(t);
-    t = setTimeout(() => { estado.filtros.busqueda = e.target.value; navegar('inicio'); }, 400);
+    t = setTimeout(() => { estado.filtros.busqueda = e.target.value; estado.vista = 'inicio'; renderApp(); }, 400);
   });
 }
 
@@ -430,16 +443,15 @@ function construirCard(obj) {
         </div>
         <span class="objeto-autor-nombre">${obj.reportante?.nombre_completo || 'Nombre Completo'}</span>
       </div>
-      <div class="objeto-titulo">${obj.titulo}</div>
-      <div class="objeto-desc-label">Descripción:</div>
-      <div class="objeto-desc">${obj.descripcion}</div>
+      <div style="display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;margin-bottom:.3rem">
+        <div class="objeto-titulo" style="margin-bottom:0">${obj.titulo}</div>
+        ${insigniaEstado(obj.estado)}
+      </div>
       <div class="objeto-ubicacion-label">${tipoLabel}</div>
       <div class="objeto-ubicacion-fila">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 10c0 6-8 13-8 13s-8-7-8-13a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
         ${obj.sede || ''}
       </div>
-      ${obj.lugar_especifico || obj.ubicacion
-        ? `<div class="objeto-ubicacion-fila" style="padding-left:16px">${obj.lugar_especifico || obj.ubicacion}</div>` : ''}
     </div>
     <div class="objeto-pie">
       ${puedeReclamar
@@ -512,6 +524,7 @@ async function renderMisReportes(pagina) {
           </div>
         </div>`;
       item.querySelector('[data-ver]')?.addEventListener('click', e => { e.stopPropagation(); abrirModalDetalle(obj); });
+      item.querySelector('[data-editar]')?.addEventListener('click', e => { e.stopPropagation(); abrirModalEditarReporte(obj, () => renderMisReportes(pagina)); });
       item.querySelector('[data-cancelar]')?.addEventListener('click', e => {
         e.stopPropagation();
         mostrarConfirmacion('¿Deseas cancelar este reporte?', async () => {
@@ -718,7 +731,6 @@ function abrirModalReporte(tipo, alTerminar) {
           <label class="campo-label req">Punto de custodia</label>
           <select name="opcion_custodia" id="selCustodia" class="campo-select" required>
             <option value="">Seleccionar...</option>
-            <option value="yo">Aún lo tengo yo</option>
             <option value="oficina">En objetos perdidos (según sede)</option>
             <option value="otro">En otro lugar</option>
           </select>
@@ -780,8 +792,7 @@ function abrirModalReporte(tipo, alTerminar) {
       datos.set('lugar_especifico', fd.get('lugar_especifico'));
       if (fd.get('hora_ocurrencia')) datos.set('hora_ocurrencia', fd.get('hora_ocurrencia'));
       const opCust = fd.get('opcion_custodia');
-      if (opCust === 'yo') datos.set('punto_custodia', 'Lo tiene el reportante');
-      else if (opCust === 'oficina') datos.set('punto_custodia', `Oficina de objetos perdidos — ${fd.get('sede')}`);
+      if (opCust === 'oficina') datos.set('punto_custodia', `Oficina de objetos perdidos — ${fd.get('sede')}`);
       else if (opCust === 'otro') datos.set('punto_custodia', document.getElementById('inputCustodiaOtro')?.value || '');
       if (imgInput?.files[0]) datos.set('imagen', imgInput.files[0]);
       try {
@@ -889,12 +900,15 @@ async function renderAdminReportes(pagina) {
                   ${pend?`<span class="insignia" style="background:var(--badge-claim-bg);color:var(--badge-claim-fg)">Pendiente</span>`:''}
                   ${insigniaEstado(r.estado)}
                 </div>
+                ${r.ruta_imagen?`<img src="${r.ruta_imagen}" alt="${r.titulo}" style="height:90px;width:auto;object-fit:cover;border-radius:6px;margin-bottom:.4rem;display:block">`:''}
                 <div style="font-weight:700;font-size:.95rem;margin-bottom:.2rem">${r.titulo}</div>
                 <div style="font-size:.79rem;color:var(--text3);margin-bottom:.3rem">${r.descripcion.slice(0,100)}${r.descripcion.length>100?'...':''}</div>
                 <div style="font-size:.74rem;color:var(--text3)">
                   📍 ${r.sede||r.ubicacion}${r.lugar_especifico?' · '+r.lugar_especifico:''}
                   &nbsp;·&nbsp; 👤 ${r.reportante?.nombre_completo}
                   &nbsp;·&nbsp; 🕐 ${tiempoRelativo(r.creado_en)}
+                  ${r.hora_ocurrencia?`&nbsp;·&nbsp; ⏰ ${r.hora_ocurrencia}`:''}
+                  ${r.punto_custodia?`<br>📦 Custodia: ${r.punto_custodia}`:''}
                 </div>
               </div>
               <div style="display:flex;flex-direction:column;gap:.4rem;flex-shrink:0">
@@ -924,6 +938,12 @@ async function renderAdminReportes(pagina) {
           });
         },50);
       }));
+      el.querySelectorAll('[data-accion="editar"]').forEach(b => b.addEventListener('click', async () => {
+        try {
+          const obj = await Reportes.obtener(parseInt(b.dataset.id));
+          abrirModalEditarReporte(obj, cargar);
+        } catch(e){ mostrarToast(e.message,'error'); }
+      }));
       el.querySelectorAll('[data-accion="eliminar"]').forEach(b => b.addEventListener('click', () => {
         mostrarConfirmacion('¿Eliminar este reporte?', async ()=>{
           try{ await Administracion.eliminarReporte(b.dataset.id); mostrarToast('Eliminado','success'); cargar(); }
@@ -948,25 +968,51 @@ async function renderAdminReclamaciones(pagina) {
     <div id="listaRecl"><div class="girador"></div></div>`;
 
   try {
-    const lista = await Reclamaciones.listar();
+    const lista = await Reclamaciones.pendientes();
     const el = document.getElementById('listaRecl');
     if (!lista?.length) { el.innerHTML=`<div class="estado-vacio"><h3>No hay reclamaciones pendientes</h3></div>`; return; }
-    el.innerHTML = `<div style="display:flex;flex-direction:column;gap:.75rem">
+    el.innerHTML = `<div style="display:flex;flex-direction:column;gap:1rem">
       ${lista.map(r=>`
-        <div style="background:#fff;border:1px solid var(--border);border-radius:var(--radius-md);padding:1.1rem">
+        <div style="background:#fff;border:2px solid var(--orange);border-radius:var(--radius-md);padding:1.2rem">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:1rem">
             <div style="flex:1;min-width:0">
-              <div style="font-weight:700;margin-bottom:.2rem">${r.reporte?.titulo||'Objeto'}</div>
-              <div style="font-size:.8rem;color:var(--text3);margin-bottom:.35rem">Reclamado por: ${r.usuario?.nombre_completo}</div>
-              <div style="font-size:.79rem;color:var(--text2)">
-                <strong>Resp. 1:</strong> ${r.respuesta_1||'—'}<br>
-                <strong>Resp. 2:</strong> ${r.respuesta_2||'—'}<br>
-                ${r.respuesta_3?`<strong>Resp. 3:</strong> ${r.respuesta_3}`:''}
+
+              <div style="font-size:.72rem;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.3rem">Objeto reclamado</div>
+              <div style="font-weight:700;font-size:1rem;margin-bottom:.15rem">${r.reporte?.titulo||'Objeto'}</div>
+              <div style="font-size:.78rem;color:var(--text3);margin-bottom:.6rem">${r.reporte?.descripcion?.slice(0,120)||''} · 📍 ${r.reporte?.sede||''} ${r.reporte?.lugar_especifico?'— '+r.reporte.lugar_especifico:''}</div>
+              ${r.reporte?.ruta_imagen?`<img src="${r.reporte.ruta_imagen}" style="height:80px;object-fit:cover;border-radius:6px;margin-bottom:.6rem">` : ''}
+
+              <div style="background:var(--bg1);border-radius:8px;padding:.7rem .9rem;margin-bottom:.6rem">
+                <div style="font-size:.72rem;font-weight:700;color:var(--blue);text-transform:uppercase;margin-bottom:.4rem">👤 Quien lo encontró (reportante)</div>
+                <div style="font-size:.82rem;margin-bottom:.25rem"><strong>${r.reporte?.reportante?.nombre_completo||'—'}</strong> · ${r.reporte?.reportante?.correo||''}</div>
+                <div style="font-size:.79rem;color:var(--text2)">
+                  <div><strong>Usuario:</strong> @${r.reporte?.reportante?.nombre_usuario||'—'}</div>
+                  <div><strong>Tipo de reporte:</strong> ${r.reporte?.tipo_reporte === 'encontrado' ? '✅ Encontrado' : '❌ Perdido'}</div>
+                  ${r.reporte?.descripcion?`<div><strong>Descripción que publicó:</strong> ${r.reporte.descripcion}</div>`:''}
+                  ${r.reporte?.sede?`<div><strong>Sede:</strong> ${r.reporte.sede}${r.reporte.lugar_especifico?' — '+r.reporte.lugar_especifico:''}</div>`:''}
+                  ${r.reporte?.hora_ocurrencia?`<div><strong>Hora de ocurrencia:</strong> ${r.reporte.hora_ocurrencia}</div>`:''}
+                  ${r.reporte?.punto_custodia?`<div><strong>Punto de custodia:</strong> ${r.reporte.punto_custodia}</div>`:''}
+                </div>
               </div>
+
+              <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:.7rem .9rem;margin-bottom:.6rem">
+                <div style="font-size:.72rem;font-weight:700;color:#c2410c;text-transform:uppercase;margin-bottom:.4rem">🙋 Quien dice que es suyo (reclamante)</div>
+                <div style="font-size:.82rem;margin-bottom:.25rem"><strong>${r.reclamante?.nombre_completo||'—'}</strong> · ${r.reclamante?.correo||''}</div>
+                <div style="font-size:.79rem;margin-bottom:.35rem;color:var(--text3)">@${r.reclamante?.nombre_usuario||'—'}</div>
+                <div style="font-size:.8rem;color:var(--text2);display:flex;flex-direction:column;gap:.35rem">
+                  <div><strong>¿Algún detalle especial del objeto?</strong><br>${r.respuesta_1||'<em style="color:var(--text3)">No respondido</em>'}</div>
+                  <div><strong>¿Cuándo y dónde lo perdiste?</strong><br>${r.respuesta_2||'<em style="color:var(--text3)">No respondido</em>'}</div>
+                  <div><strong>¿Alguna marca o contenido específico?</strong><br>${r.respuesta_3||'<em style="color:var(--text3)">No respondido</em>'}</div>
+                  <div><strong>Notas adicionales:</strong><br>${r.notas||'<em style="color:var(--text3)">Sin notas</em>'}</div>
+                </div>
+                ${r.ruta_evidencia?`<div style="margin-top:.5rem"><strong style="font-size:.8rem">Evidencia adjunta:</strong><br><img src="${r.ruta_evidencia}" style="height:120px;object-fit:cover;border-radius:6px;margin-top:.3rem"></div>` : '<div style="margin-top:.4rem;font-size:.79rem;color:var(--text3)"><em>Sin evidencia adjunta</em></div>'}
+              </div>
+
+              <div style="font-size:.74rem;color:var(--text3)">Recibido: ${new Date(r.creado_en).toLocaleString('es-CO')}</div>
             </div>
             <div style="display:flex;flex-direction:column;gap:.4rem;flex-shrink:0">
               <button class="btn btn-verde btn-sm" data-apr="${r.id}">✓ Aprobar</button>
-              <button class="btn btn-borde btn-sm" data-rec="${r.id}">✗ Rechazar</button>
+              <button class="btn btn-rojo btn-sm" data-rec="${r.id}">✗ Rechazar</button>
             </div>
           </div>
         </div>`).join('')}
@@ -1014,9 +1060,9 @@ async function renderAdminUsuarios(pagina) {
         <div style="display:grid;grid-template-columns:1fr 1fr auto auto;padding:.75rem 1rem;border-bottom:1px solid var(--border);align-items:center;gap:.5rem">
           <div style="font-weight:500;font-size:.855rem">${u.nombre_completo}</div>
           <div style="font-size:.79rem;color:var(--text3)">${u.correo}</div>
-          <div id="est-${u.id}">${u.bloqueado?`<span class="insignia insignia-cancelado">Bloqueado</span>`:`<span class="insignia insignia-encontrado">Activo</span>`}</div>
+          <div id="est-${u.id}">${u.estado==="bloqueado"?`<span class="insignia insignia-cancelado">Bloqueado</span>`:`<span class="insignia insignia-encontrado">Activo</span>`}</div>
           <div id="acc-${u.id}">
-            ${u.bloqueado
+            ${u.estado==="bloqueado"
               ? `<button class="btn btn-verde btn-sm" data-accion="desbloquear" data-id="${u.id}" data-nombre="${u.nombre_completo}">Desbloquear</button>`
               : `<button class="btn btn-rojo btn-sm" data-accion="bloquear" data-id="${u.id}" data-nombre="${u.nombre_completo}">🚫 Bloquear</button>`}
           </div>
@@ -1024,15 +1070,17 @@ async function renderAdminUsuarios(pagina) {
     </div>`;
 
     el.querySelectorAll('[data-accion="bloquear"]').forEach(b => b.addEventListener('click', async ()=>{
-      try{ await Administracion.bloquearUsuario(b.dataset.id); mostrarToast(`${b.dataset.nombre} bloqueado`,'info');
-        document.getElementById(`est-${b.dataset.id}`).innerHTML=`<span class="insignia insignia-cancelado">Bloqueado</span>`;
-        document.getElementById(`acc-${b.dataset.id}`).innerHTML=`<button class="btn btn-verde btn-sm" data-accion="desbloquear" data-id="${b.dataset.id}" data-nombre="${b.dataset.nombre}">Desbloquear</button>`;
+      try{
+        await Administracion.bloquearUsuario(b.dataset.id);
+        mostrarToast(`${b.dataset.nombre} bloqueado`,'info');
+        render(await Administracion.listarUsuarios());
       } catch(e){ mostrarToast(e.message,'error'); }
     }));
     el.querySelectorAll('[data-accion="desbloquear"]').forEach(b => b.addEventListener('click', async ()=>{
-      try{ await Administracion.desbloquearUsuario(b.dataset.id); mostrarToast(`${b.dataset.nombre} desbloqueado`,'success');
-        document.getElementById(`est-${b.dataset.id}`).innerHTML=`<span class="insignia insignia-encontrado">Activo</span>`;
-        document.getElementById(`acc-${b.dataset.id}`).innerHTML=`<button class="btn btn-rojo btn-sm" data-accion="bloquear" data-id="${b.dataset.id}" data-nombre="${b.dataset.nombre}">🚫 Bloquear</button>`;
+      try{
+        await Administracion.desbloquearUsuario(b.dataset.id);
+        mostrarToast(`${b.dataset.nombre} desbloqueado`,'success');
+        render(await Administracion.listarUsuarios());
       } catch(e){ mostrarToast(e.message,'error'); }
     }));
   }
@@ -1206,6 +1254,127 @@ function renderAuth(tipo) {
   mount();
 }
 
+function abrirModalEditarReporte(obj, alTerminar) {
+  const { cerrar } = crearModal({
+    titulo: 'Editar reporte',
+    contenido: `
+      <form id="formEditar">
+        <div style="background:var(--bg1);border-radius:8px;padding:.6rem .8rem;margin-bottom:1rem;font-size:.8rem;color:var(--text3)">
+          <strong>Tipo:</strong> ${obj.tipo_reporte === 'encontrado' ? '✅ Encontrado' : '❌ Perdido'}
+          &nbsp;·&nbsp; <strong>Estado:</strong> ${obj.estado}
+          &nbsp;·&nbsp; <strong>Reportante:</strong> ${obj.reportante?.nombre_completo||'—'}
+        </div>
+        ${obj.ruta_imagen?`<div style="margin-bottom:.8rem"><img src="${obj.ruta_imagen}" style="height:100px;object-fit:cover;border-radius:6px" alt="Imagen actual"><div style="font-size:.74rem;color:var(--text3);margin-top:.2rem">Imagen actual</div></div>`:''}
+        <div class="campo-grupo">
+          <label class="campo-label req">Título</label>
+          <input name="titulo" class="campo-input" value="${obj.titulo}" required>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+          <div class="campo-grupo">
+            <label class="campo-label req">Categoría</label>
+            <select name="categoria" class="campo-select" required>
+              <option value="electronico" ${obj.categoria==='electronico'?'selected':''}>📱 Electrónico</option>
+              <option value="documento"  ${obj.categoria==='documento'?'selected':''}>📄 Documento</option>
+              <option value="accesorio"  ${obj.categoria==='accesorio'?'selected':''}>👜 Accesorio</option>
+              <option value="ropa"       ${obj.categoria==='ropa'?'selected':''}>👕 Ropa</option>
+              <option value="maleta"     ${obj.categoria==='maleta'?'selected':''}>🎒 Maleta/Mochila</option>
+              <option value="llaves"     ${obj.categoria==='llaves'?'selected':''}>🔑 Llaves</option>
+              <option value="gafas"      ${obj.categoria==='gafas'?'selected':''}>👓 Gafas</option>
+              <option value="libro"      ${obj.categoria==='libro'?'selected':''}>📚 Libros</option>
+              <option value="otro"       ${obj.categoria==='otro'?'selected':''}>📦 Otro</option>
+            </select>
+          </div>
+          <div class="campo-grupo">
+            <label class="campo-label req">Sede</label>
+            <select name="sede" class="campo-select" required>
+              <option value="Sede Robledo"     ${obj.sede==='Sede Robledo'?'selected':''}>Sede Robledo</option>
+              <option value="Sede Fraternidad" ${obj.sede==='Sede Fraternidad'?'selected':''}>Sede Fraternidad</option>
+              <option value="Sede Floresta"    ${obj.sede==='Sede Floresta'?'selected':''}>Sede Floresta</option>
+              <option value="Sede Prado"       ${obj.sede==='Sede Prado'?'selected':''}>Sede Prado</option>
+              <option value="Sede Castilla"    ${obj.sede==='Sede Castilla'?'selected':''}>Sede Castilla</option>
+            </select>
+          </div>
+        </div>
+        <div class="campo-grupo">
+          <label class="campo-label req">Lugar específico</label>
+          <input name="lugar_especifico" class="campo-input" value="${obj.lugar_especifico||obj.ubicacion||''}" required>
+        </div>
+        <div class="campo-grupo">
+          <label class="campo-label">Hora ${obj.tipo_reporte === 'encontrado' ? 'encontrado' : 'perdido'}</label>
+          <input name="hora_ocurrencia" type="time" class="campo-input" value="${obj.hora_ocurrencia||''}">
+        </div>
+        <div class="campo-grupo">
+          <label class="campo-label">Punto de custodia</label>
+          <select name="opcion_custodia" id="selCustodiaEdit" class="campo-select">
+            <option value="">Sin cambio (mantener actual)</option>
+            <option value="oficina" ${obj.punto_custodia?.startsWith('Oficina')?'selected':''}>En objetos perdidos (según sede)</option>
+            <option value="otro" ${obj.punto_custodia && !obj.punto_custodia.startsWith('Oficina')?'selected':''}>En otro lugar</option>
+          </select>
+        </div>
+        <div class="campo-grupo ${obj.punto_custodia && !obj.punto_custodia.startsWith('Oficina') ? '' : 'oculto'}" id="campoCustodiaOtroEdit">
+          <label class="campo-label">¿En qué lugar lo dejaste?</label>
+          <input id="inputCustodiaOtroEdit" class="campo-input" value="${obj.punto_custodia && !obj.punto_custodia.startsWith('Oficina') ? obj.punto_custodia : ''}" placeholder="Ej: Portería Bloque A...">
+        </div>
+        <div class="campo-grupo">
+          <label class="campo-label req">Descripción</label>
+          <textarea name="descripcion" class="campo-textarea" required>${obj.descripcion}</textarea>
+        </div>
+        <div class="campo-grupo">
+          <label class="campo-label">Fotografía (opcional — reemplaza la actual)</label>
+          <label class="zona-carga" for="campoImgEdit">
+            <div style="color:var(--text3);font-size:.875rem">Haz clic para subir imagen</div>
+            <input type="file" name="imagen" accept="image/*" id="campoImgEdit" style="display:none">
+          </label>
+          <img id="prevImgEdit" class="imagen-previa oculto">
+        </div>
+        <button type="submit" class="btn btn-purple btn-full btn-lg" id="btnGuardarEdit">Guardar cambios</button>
+      </form>`,
+  });
+  setTimeout(() => {
+    const imgInput = document.getElementById('campoImgEdit');
+    const prev = document.getElementById('prevImgEdit');
+    imgInput?.addEventListener('change', () => {
+      if (imgInput.files[0]) { prev.src = URL.createObjectURL(imgInput.files[0]); prev.classList.remove('oculto'); }
+    });
+    const selCust = document.getElementById('selCustodiaEdit');
+    const campoCustOtro = document.getElementById('campoCustodiaOtroEdit');
+    selCust?.addEventListener('change', () => {
+      campoCustOtro?.classList.toggle('oculto', selCust.value !== 'otro');
+    });
+    let saving = false;
+    document.getElementById('formEditar')?.addEventListener('submit', async e => {
+      e.preventDefault();
+      if (saving) return; saving = true;
+      const btn = document.getElementById('btnGuardarEdit');
+      botonCargando(btn, true);
+      const fd = new FormData(e.target);
+      const datos = new FormData();
+      datos.set('titulo',           fd.get('titulo'));
+      datos.set('categoria',        fd.get('categoria'));
+      datos.set('sede',             fd.get('sede'));
+      datos.set('lugar_especifico', fd.get('lugar_especifico'));
+      datos.set('ubicacion',        fd.get('lugar_especifico'));
+      datos.set('descripcion',      fd.get('descripcion'));
+      if (fd.get('hora_ocurrencia')) datos.set('hora_ocurrencia', fd.get('hora_ocurrencia'));
+      const opCust = fd.get('opcion_custodia');
+      if (opCust === 'oficina') datos.set('punto_custodia', `Oficina de objetos perdidos — ${fd.get('sede')}`);
+      else if (opCust === 'otro') datos.set('punto_custodia', document.getElementById('inputCustodiaOtroEdit')?.value || '');
+      if (imgInput?.files[0]) datos.set('imagen', imgInput.files[0]);
+      try {
+        const esAdmin = estado.usuario?.rol === 'admin' || estado.usuario?.rol === 'custodia';
+        if (esAdmin) {
+          await Reportes.adminEditar(obj.id, datos);
+        } else {
+          await Reportes.actualizar(obj.id, datos);
+        }
+        cerrar(); mostrarToast('Reporte actualizado','success'); alTerminar?.();
+      } catch (err) {
+        mostrarToast(err.message,'error'); botonCargando(btn,false); saving=false;
+      }
+    });
+  }, 50);
+}
+
 function abrirModalRecuperacion() {
   const { cerrar } = crearModal({
     titulo: 'Recuperar contraseña',
@@ -1258,63 +1427,42 @@ function abrirModalRecuperacion() {
 
 function renderRegistro() {
   document.getElementById('aplicacion').innerHTML = `
-    <div class="auth-bg">
-      <div class="auth-card" style="max-width:700px">
-        <div class="auth-panel-logo">
-          <div class="auth-logo-wrap">
-            <div class="auth-logo-nombre">ITM</div>
-            <div class="auth-logo-sub">Institución<br>Universitaria</div>
+    <div class="auth-registro-bg">
+      <div class="registro-card">
+        <div style="font-size:.73rem;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.75rem">ITM — Institución Universitaria</div>
+        <h1 class="registro-titulo">Crear cuenta</h1>
+        <p class="registro-sub">Usa tu correo institucional @correo.itm.edu.co</p>
+        <form id="formRegistro">
+          <div class="campo-grupo">
+            <label class="campo-label req">Nombre completo</label>
+            <input name="nombre_completo" class="campo-input" placeholder="Juan Pérez García" required>
           </div>
-        </div>
-        <div class="auth-panel-form" id="authFormReg" style="overflow-y:auto">
-          <h2 class="auth-titulo">Crear cuenta</h2>
-          <p style="font-size:.79rem;color:var(--text3);margin-bottom:1rem">Usa tu correo institucional @correo.itm.edu.co</p>
-          <form id="formRegistro">
-            <div class="campo-grupo">
-              <label class="campo-label req">Nombre completo</label>
-              <div class="auth-campo-wrap">
-                <span class="ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg></span>
-                <input name="nombre_completo" type="text" placeholder="Juan Pérez García" required>
-              </div>
-            </div>
-            <div class="campo-grupo">
-              <label class="campo-label req">Correo institucional</label>
-              <div class="auth-campo-wrap">
-                <span class="ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg></span>
-                <input name="correo" type="email" placeholder="juan.perez@correo.itm.edu.co" required>
-              </div>
-            </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem">
-              <div class="campo-grupo">
-                <label class="campo-label req">Documento</label>
-                <div class="auth-campo-wrap">
-                  <span class="ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="14" x="3" y="5" rx="2"/><path d="M8 10h8M8 14h5"/></svg></span>
-                  <input name="numero_documento" type="text" placeholder="Número de documento" required>
-                </div>
-              </div>
-              <div class="campo-grupo">
-                <label class="campo-label req">Rol</label>
-                <select name="rol" class="campo-select">
-                  <option value="estudiante">Estudiante</option>
-                  <option value="profesor">Profesor</option>
-                </select>
-              </div>
-            </div>
-            <div class="campo-grupo">
-              <label class="campo-label req">Contraseña</label>
-              <div class="auth-campo-wrap">
-                <span class="ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
-                <input name="contrasena" type="password" placeholder="Mínimo 8 caracteres" autocomplete="new-password" required>
-              </div>
-            </div>
-            <div id="errReg" style="margin-bottom:.75rem"></div>
-            <div style="overflow:hidden">
-              <button type="submit" class="auth-btn-accion" id="btnCrearCuenta">Crear cuenta</button>
-            </div>
-          </form>
-          <div class="auth-footer-link">
-            ¿Ya tienes cuenta? <a href="#iniciar-sesion">Iniciar sesión</a>
+          <div class="campo-grupo">
+            <label class="campo-label req">Correo institucional</label>
+            <input name="correo" type="email" class="campo-input" placeholder="juan.perez@correo.itm.edu.co" required>
           </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+            <div class="campo-grupo">
+              <label class="campo-label req">Documento</label>
+              <input name="numero_documento" type="text" class="campo-input" placeholder="Número de documento" required>
+            </div>
+            <div class="campo-grupo">
+              <label class="campo-label req">Rol</label>
+              <select name="rol" class="campo-select">
+                <option value="estudiante">Estudiante</option>
+                <option value="profesor">Profesor</option>
+              </select>
+            </div>
+          </div>
+          <div class="campo-grupo">
+            <label class="campo-label req">Contraseña</label>
+            <input name="contrasena" type="password" class="campo-input" placeholder="Mínimo 8 caracteres" autocomplete="new-password" required>
+          </div>
+          <div id="errReg" style="margin-bottom:.75rem"></div>
+          <button type="submit" class="registro-btn" id="btnCrearCuenta">Crear cuenta</button>
+        </form>
+        <div style="text-align:center;margin-top:1.25rem;font-size:.82rem;color:var(--text3)">
+          ¿Ya tienes cuenta? <a href="#iniciar-sesion" style="color:var(--purple);font-weight:600">Iniciar sesión</a>
         </div>
       </div>
     </div>`;
@@ -1352,7 +1500,7 @@ function cerrarSesion() {
   mostrarConfirmacion('¿Deseas cerrar sesión?', () => {
     TokenSesion.limpiar(); AlmacenUsuario.limpiar();
     estado.usuario = null;
-    clearInterval(estado.intervaloNotif);
+    detenerPolling();
     window.location.hash = '#inicio';
     navegar('inicio');
     mostrarToast('Sesión cerrada correctamente','info');
@@ -1362,18 +1510,18 @@ function cerrarSesion() {
 function toggleSidebar() {
   const sb = document.getElementById('sidebar');
   if (!sb) return;
-  const abierta = sb.classList.toggle('abierta');
-  if (abierta) {
-    const overlay = document.createElement('div');
-    overlay.id = 'sbOverlay';
-    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.42);z-index:99;';
-    overlay.addEventListener('click', () => { sb.classList.remove('abierta'); overlay.remove(); });
-    document.body.appendChild(overlay);
-  } else { document.getElementById('sbOverlay')?.remove(); }
+  const existingOverlay = document.getElementById('sbOverlay');
+  if (existingOverlay) { sb.classList.remove('abierta'); existingOverlay.remove(); return; }
+  sb.classList.add('abierta');
+  const overlay = document.createElement('div');
+  overlay.id = 'sbOverlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.42);z-index:99;';
+  overlay.addEventListener('click', () => { sb.classList.remove('abierta'); overlay.remove(); });
+  document.body.appendChild(overlay);
 }
 
 async function iniciarPolling() {
-  clearInterval(estado.intervaloNotif);
+  if (estado.intervaloNotif) return; // ya está corriendo
   const act = async () => {
     try {
       const { cantidad } = await Notificaciones.cantidadNoLeidas();
@@ -1382,12 +1530,20 @@ async function iniciarPolling() {
     } catch(_){}
   };
   await act();
-  estado.intervaloNotif = setInterval(act, 30000);
+  estado.intervaloNotif = setInterval(act, 20000);
+}
+
+function detenerPolling() {
+  clearInterval(estado.intervaloNotif);
+  estado.intervaloNotif = null;
 }
 
 /* ── Routing ─────────────────────────────────────── */
 window.addEventListener('hashchange', () => {
-  document.querySelectorAll('.btn-fab,.fab-menu').forEach(b=>b.remove());
+  document.querySelectorAll('.btn-fab,.fab-menu').forEach(b => { b._removeHandler?.(); b.remove(); });
+  document.querySelectorAll('.fondo-modal').forEach(m => m.remove());
+  document.getElementById('sbOverlay')?.remove();
+  document.getElementById('sidebar')?.classList.remove('abierta');
   const h = window.location.hash.slice(1);
   estado.vista = h || 'inicio';
   estado.filtros = { tipo_reporte:'', categoria:'', sede:'', busqueda:'' };

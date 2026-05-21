@@ -96,6 +96,8 @@ export const Reclamaciones = {
   pendientes:  ()            => peticion('GET',   '/reclamaciones/pendientes'),
   delReporte:  (id)          => peticion('GET',   `/reclamaciones/reporte/${id}`),
   revisar:     (id, d)       => peticion('POST',  `/reclamaciones/${id}/revisar`, d),
+  aprobar:     (id)          => peticion('POST',  `/reclamaciones/${id}/revisar`, { accion: 'aprobar' }),
+  rechazar:    (id, motivo)  => peticion('POST',  `/reclamaciones/${id}/revisar`, { accion: 'rechazar', motivo_rechazo: motivo }),
   registrarEntrega: (id, d)  => peticion('POST',  `/reclamaciones/${id}/entregar`, d),
 };
 
@@ -113,6 +115,7 @@ export const Administracion = {
   buscarUsuarios:    (nombre) => peticion('GET',  `/admin/usuarios/buscar?nombre=${encodeURIComponent(nombre)}`),
   bloquearUsuario:   (id) => peticion('POST', `/admin/usuarios/${id}/bloquear`),
   desbloquearUsuario:(id) => peticion('POST', `/admin/usuarios/${id}/desbloquear`),
+  eliminarReporte:   (id) => peticion('DELETE', `/reportes/${id}/forzar`),
 };
 
 export { TokenSesion, AlmacenUsuario };

@@ -2,7 +2,7 @@
 """Repositorio de Usuarios. Extiende RepositorioBase (Patrón Repository)."""
 from typing import Optional, List
 from sqlalchemy.orm import Session
-from backend.modelos.usuario import Usuario, EstadoUsuario
+from backend.modelos.usuario import Usuario, EstadoUsuario, RolUsuario
 from backend.repositorios.base import RepositorioBase
 
 
@@ -30,3 +30,6 @@ class RepositorioUsuario(RepositorioBase[Usuario]):
     def desbloquear_usuario(self, usuario: Usuario) -> Usuario:
         usuario.estado = EstadoUsuario.ACTIVO
         return self.actualizar(usuario)
+
+    def obtener_admins(self) -> List[Usuario]:
+        return self.sesion.query(Usuario).filter(Usuario.rol == RolUsuario.ADMIN).all()
