@@ -1,5 +1,4 @@
 # backend/modelos/reporte.py
-"""Modelos Reporte e HistorialReporte. Principio SOLID — Responsabilidad Única."""
 import enum
 from datetime import datetime
 from sqlalchemy import Column, Integer, String, Text, DateTime, Enum, ForeignKey, Boolean
@@ -21,11 +20,13 @@ class CategoriaObjeto(str, enum.Enum):
 
 
 class EstadoObjeto(str, enum.Enum):
-    PERDIDO    = "perdido"
-    ENCONTRADO = "encontrado"
-    RECLAMADO  = "reclamado"
-    ENTREGADO  = "entregado"
-    CANCELADO  = "cancelado"
+    PERDIDO     = "perdido"
+    ENCONTRADO  = "encontrado"
+    EN_REVISION = "en_revision"
+    APROBADO    = "aprobado"
+    RECLAMADO   = "reclamado"
+    ENTREGADO   = "entregado"
+    CANCELADO   = "cancelado"
 
 
 class TipoReporte(str, enum.Enum):
@@ -53,12 +54,12 @@ class Reporte(Base):
     sede                     = Column(Enum(SedeUniversitaria), nullable=True)
     lugar_especifico         = Column(String(200), nullable=True)
     ruta_imagen              = Column(String(500), nullable=True)
-    estado                   = Column(Enum(EstadoObjeto), nullable=False)
+    estado                   = Column(String(50), nullable=False)
     punto_custodia           = Column(String(300), nullable=True)
     aprobado                 = Column(Boolean, default=False)
     motivo_rechazo           = Column(Text, nullable=True)
     fecha_ocurrencia         = Column(DateTime, nullable=True)
-    hora_ocurrencia          = Column(String(10), nullable=True)  # 'HH:MM' para validacion interna
+    hora_ocurrencia          = Column(String(10), nullable=True)
     creado_en                = Column(DateTime, default=datetime.utcnow)
     actualizado_en           = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     id_reportante            = Column(Integer, ForeignKey("usuarios.id"), nullable=False)
@@ -77,7 +78,6 @@ class Reporte(Base):
 
 
 class HistorialReporte(Base):
-    """Trazabilidad automática de cambios (HU23). Patrón Observer."""
     __tablename__ = "historial_reportes"
 
     id                 = Column(Integer, primary_key=True, index=True)

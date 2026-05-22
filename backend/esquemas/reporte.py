@@ -45,7 +45,7 @@ class EsquemaReporte(BaseModel):
     sede: Optional[SedeUniversitaria]
     lugar_especifico: Optional[str]
     ruta_imagen: Optional[str]
-    estado: EstadoObjeto
+    estado: str
     punto_custodia: Optional[str]
     aprobado: bool
     hora_ocurrencia: str | None
@@ -61,7 +61,7 @@ class EsquemaAccionAdmin(BaseModel):
 
 
 class EsquemaCambioEstado(BaseModel):
-    nuevo_estado: EstadoObjeto
+    nuevo_estado: str
     notas: Optional[str] = None
 
 

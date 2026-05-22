@@ -94,6 +94,7 @@ export const Reclamaciones = {
   enviar:      (idRep, fd)   => peticion('POST',  `/reclamaciones/reporte/${idRep}`, fd, true),
   mias:        ()            => peticion('GET',   '/reclamaciones/mias'),
   pendientes:  ()            => peticion('GET',   '/reclamaciones/pendientes'),
+  aprobadas:   ()            => peticion('GET',   '/reclamaciones/aprobadas'),
   delReporte:  (id)          => peticion('GET',   `/reclamaciones/reporte/${id}`),
   revisar:     (id, d)       => peticion('POST',  `/reclamaciones/${id}/revisar`, d),
   aprobar:     (id)          => peticion('POST',  `/reclamaciones/${id}/revisar`, { accion: 'aprobar' }),

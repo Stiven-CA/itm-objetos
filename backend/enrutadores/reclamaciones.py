@@ -27,9 +27,18 @@ def reclamaciones_pendientes(
     return ServicioReclamacion(sesion).reclamaciones_pendientes(personal)
 
 
+@enrutador.get("/aprobadas", response_model=List[EsquemaReclamacion])
+def reclamaciones_aprobadas(
+    personal: Usuario = Depends(requerir_personal),
+    sesion: Session = Depends(obtener_sesion),
+):
+    return ServicioReclamacion(sesion).reclamaciones_aprobadas(personal)
+
+
 @enrutador.post("/reporte/{id_reporte}", response_model=EsquemaReclamacion, status_code=201)
 async def enviar_reclamacion(
     id_reporte: int,
+    cedula_reclamante: str = Form(None),
     respuesta_1: str = Form(None),
     respuesta_2: str = Form(None),
     respuesta_3: str = Form(None),
@@ -38,8 +47,11 @@ async def enviar_reclamacion(
     usuario: Usuario = Depends(obtener_usuario_actual),
     sesion: Session = Depends(obtener_sesion),
 ):
-    datos = EsquemaCrearReclamacion(respuesta_1=respuesta_1, respuesta_2=respuesta_2,
-                                    respuesta_3=respuesta_3, notas=notas)
+    datos = EsquemaCrearReclamacion(
+        cedula_reclamante=cedula_reclamante,
+        respuesta_1=respuesta_1, respuesta_2=respuesta_2,
+        respuesta_3=respuesta_3, notas=notas,
+    )
     return ServicioReclamacion(sesion).enviar_reclamacion(id_reporte, datos, usuario, evidencia)
 
 

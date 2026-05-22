@@ -32,6 +32,17 @@ class RepositorioReclamacion(RepositorioBase[Reclamacion]):
                 .filter(Reclamacion.estado == EstadoReclamacion.PENDIENTE)
                 .order_by(Reclamacion.creado_en.asc()).all())
 
+    def obtener_aprobadas(self) -> List[Reclamacion]:
+        from backend.modelos.reporte import Reporte
+        from backend.modelos.usuario import Usuario
+        return (self.sesion.query(Reclamacion)
+                .options(
+                    joinedload(Reclamacion.reclamante),
+                    joinedload(Reclamacion.reporte).joinedload(Reporte.reportante),
+                )
+                .filter(Reclamacion.estado == EstadoReclamacion.APROBADA)
+                .order_by(Reclamacion.revisado_en.desc()).all())
+
     def ya_reclamo(self, id_reporte: int, id_usuario: int) -> bool:
         return (self.sesion.query(Reclamacion)
                 .filter(Reclamacion.id_reporte == id_reporte,

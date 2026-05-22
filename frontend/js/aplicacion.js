@@ -30,7 +30,7 @@ function navegar(vista, params = {}) {
 function renderApp() {
   const vista = estado.vista || 'inicio';
   const protegidas = ['mis-reportes','notificaciones','preferencias-notificacion',
-    'admin-reportes','admin-reclamaciones','admin-usuarios'];
+    'admin-reportes','admin-reclamaciones','admin-reclamos','admin-usuarios'];
 
   if (protegidas.includes(vista) && !estado.usuario) {
     window.location.hash = '#iniciar-sesion'; return;
@@ -94,6 +94,7 @@ function renderApp() {
     case 'preferencias-notificacion':  renderPreferencias(pagina);              break;
     case 'admin-reportes':             renderAdminReportes(pagina);             break;
     case 'admin-reclamaciones':        renderAdminReclamaciones(pagina);        break;
+    case 'admin-reclamos':             renderAdminReclamos(pagina);             break;
     case 'admin-usuarios':             renderAdminUsuarios(pagina);             break;
     default: navegar('inicio');
   }
@@ -135,6 +136,7 @@ function renderSidebar() {
     ...(u?.rol === 'admin' ? [
       { id:'admin-reportes',       ic:'check',  label:'Gestión de reportes' },
       { id:'admin-reclamaciones',  ic:'lock',   label:'Reclamaciones' },
+      { id:'admin-reclamos',       ic:'package', label:'Reclamos' },
       { id:'admin-usuarios',       ic:'users',  label:'Usuarios' },
     ] : []),
   ];
@@ -228,6 +230,7 @@ function renderHeader() {
           <div class="dropdown-sep"></div>
           <div class="dropdown-item" id="ddAdminRep"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>Todos los reportes</div>
           <div class="dropdown-item" id="ddAdminRec"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Reclamaciones</div>
+          <div class="dropdown-item" id="ddAdminReclamos"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m7.5 4.27 9 5.15M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5M12 22V12"/></svg>Reclamos</div>
           <div class="dropdown-item" id="ddAdminUsr"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Usuarios</div>` : ''}
           <div class="dropdown-sep"></div>
           <div class="dropdown-item danger" id="ddCerrar"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>Cerrar sesión</div>
@@ -250,6 +253,7 @@ function renderHeader() {
   document.getElementById('ddNotif')?.addEventListener('click', () => { dd?.classList.add('oculto'); navegar('notificaciones'); });
   document.getElementById('ddAdminRep')?.addEventListener('click', () => navegar('admin-reportes'));
   document.getElementById('ddAdminRec')?.addEventListener('click', () => navegar('admin-reclamaciones'));
+  document.getElementById('ddAdminReclamos')?.addEventListener('click', () => navegar('admin-reclamos'));
   document.getElementById('ddAdminUsr')?.addEventListener('click', () => navegar('admin-usuarios'));
 }
 
@@ -429,7 +433,7 @@ function construirCard(obj) {
   const card = document.createElement('div');
   card.className = 'objeto-card';
   const esMio = estado.usuario?.id === obj.reportante?.id;
-  const puedeReclamar = estado.usuario && !esMio && obj.estado === 'encontrado';
+  const puedeReclamar = estado.usuario && !esMio && (obj.estado === 'encontrado' || obj.estado === 'perdido');
   const tipoLabel = obj.tipo_reporte === 'perdido' ? 'Perdido en:' : 'Encontrado en:';
 
   card.innerHTML = `
@@ -556,11 +560,17 @@ async function renderNotificaciones(pagina) {
     const lista = await Notificaciones.listar();
     const cont  = document.getElementById('listaNot');
     if (!lista.length) { cont.innerHTML = `<div class="estado-vacio"><h3>Sin notificaciones</h3><p>Todo tranquilo por ahora.</p></div>`; return; }
-    const iconos = { coincidencia:'🔍', reclamo_nuevo:'📩', reclamo_aprobado:'✅', reclamo_rechazado:'❌', estado_cambiado:'🔄', entrega_lista:'📦' };
+    const iconos = { coincidencia:'🔍', reclamo_nuevo:'📩', reclamo_aprobado:'✅', reclamo_rechazado:'❌', estado_cambiado:'🔄', reporte_aprobado:'✅', reporte_rechazado:'❌', entrega_lista:'📦' };
+    const destinos = {
+      reclamo_nuevo: estado.usuario?.rol === 'admin' ? 'admin-reclamaciones' : 'mis-reportes',
+      reclamo_aprobado: 'mis-reportes', reclamo_rechazado: 'mis-reportes',
+      coincidencia: 'mis-reportes', estado_cambiado: 'mis-reportes',
+      reporte_aprobado: 'mis-reportes', reporte_rechazado: 'mis-reportes', entrega_lista: 'mis-reportes',
+    };
     cont.innerHTML = `
       <div style="background:#fff;border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden">
         ${lista.map(n => `
-          <div class="notif-item ${n.leida?'':'no-leida'}" data-id="${n.id}">
+          <div class="notif-item ${n.leida?'':'no-leida'}" data-id="${n.id}" data-tipo="${n.tipo}" style="cursor:pointer">
             <div class="notif-icono">${iconos[n.tipo]||'🔔'}</div>
             <div style="flex:1;min-width:0">
               <div class="notif-titulo">${n.titulo}</div>
@@ -573,8 +583,8 @@ async function renderNotificaciones(pagina) {
     cont.querySelectorAll('.notif-item').forEach(it => {
       it.addEventListener('click', async () => {
         await Notificaciones.marcarLeida(parseInt(it.dataset.id));
-        it.classList.remove('no-leida');
-        it.querySelector('[style*="8px"]')?.remove();
+        const vista = destinos[it.dataset.tipo] || 'mis-reportes';
+        navegar(vista);
       });
     });
   } catch (err) { mostrarToast(err.message,'error'); }
@@ -639,7 +649,7 @@ function renderPreferencias(pagina) {
 ═══════════════════════════════════════════════════ */
 function abrirModalDetalle(obj) {
   const esMio = estado.usuario?.id === obj.reportante?.id;
-  const puedeReclamar = estado.usuario && !esMio && obj.estado === 'encontrado';
+  const puedeReclamar = estado.usuario && !esMio && (obj.estado === 'encontrado' || obj.estado === 'perdido');
   const tipoLabel = obj.tipo_reporte === 'perdido' ? 'Perdido en' : 'Encontrado en';
 
   const { cerrar } = crearModal({
@@ -815,16 +825,20 @@ function abrirModalReclamar(obj) {
       <p style="font-weight:600;margin-bottom:1rem">Objeto: <span style="color:var(--purple)">${obj.titulo}</span></p>
       <form id="formReclamar">
         <div class="campo-grupo">
+          <label class="campo-label req">Cédula o carné <span style="font-weight:400;color:var(--text3)">(en caso de ser aprobado para reclamar)</span></label>
+          <input name="cedula_reclamante" class="campo-input" placeholder="Solo números" inputmode="numeric" pattern="[0-9]+" required>
+        </div>
+        <div class="campo-grupo">
           <label class="campo-label req">¿Algún detalle especial del objeto?</label>
           <input name="respuesta_1" class="campo-input" placeholder="Color, marca, modelo, contenido..." required>
         </div>
         <div class="campo-grupo">
-          <label class="campo-label req">¿Cuándo y dónde lo perdiste?</label>
-          <input name="respuesta_2" class="campo-input" placeholder="Ej: El lunes en la cafetería..." required>
+          <label class="campo-label req">Lugar donde lo perdiste</label>
+          <input name="respuesta_2" class="campo-input" placeholder="Ej: Cafetería bloque A, segundo piso..." required>
         </div>
         <div class="campo-grupo">
-          <label class="campo-label">¿Alguna marca o contenido específico?</label>
-          <input name="respuesta_3" class="campo-input" placeholder="Detalles adicionales...">
+          <label class="campo-label req">Fecha y hora en que lo perdiste</label>
+          <input name="respuesta_3" type="datetime-local" class="campo-input" required>
         </div>
         <div class="campo-grupo">
           <label class="campo-label">Adjunta evidencia de propiedad</label>
@@ -970,10 +984,10 @@ async function renderAdminReclamaciones(pagina) {
   try {
     const lista = await Reclamaciones.pendientes();
     const el = document.getElementById('listaRecl');
-    if (!lista?.length) { el.innerHTML=`<div class="estado-vacio"><h3>No hay reclamaciones pendientes</h3></div>`; return; }
+    if (!lista?.length) { el.innerHTML=`<div class="estado-vacio"><h3>No hay reclamaciones en revisión</h3></div>`; return; }
     el.innerHTML = `<div style="display:flex;flex-direction:column;gap:1rem">
       ${lista.map(r=>`
-        <div style="background:#fff;border:2px solid var(--orange);border-radius:var(--radius-md);padding:1.2rem">
+        <div style="background:#fff;border:2px solid var(--orange);border-radius:var(--radius-md);padding:1.2rem" id="rc-${r.id}">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:1rem">
             <div style="flex:1;min-width:0">
 
@@ -983,7 +997,7 @@ async function renderAdminReclamaciones(pagina) {
               ${r.reporte?.ruta_imagen?`<img src="${r.reporte.ruta_imagen}" style="height:80px;object-fit:cover;border-radius:6px;margin-bottom:.6rem">` : ''}
 
               <div style="background:var(--bg1);border-radius:8px;padding:.7rem .9rem;margin-bottom:.6rem">
-                <div style="font-size:.72rem;font-weight:700;color:var(--blue);text-transform:uppercase;margin-bottom:.4rem">👤 Quien lo encontró (reportante)</div>
+                <div style="font-size:.72rem;font-weight:700;color:var(--blue);text-transform:uppercase;margin-bottom:.4rem">👤 Quien lo reportó (reportante)</div>
                 <div style="font-size:.82rem;margin-bottom:.25rem"><strong>${r.reporte?.reportante?.nombre_completo||'—'}</strong> · ${r.reporte?.reportante?.correo||''}</div>
                 <div style="font-size:.79rem;color:var(--text2)">
                   <div><strong>Usuario:</strong> @${r.reporte?.reportante?.nombre_usuario||'—'}</div>
@@ -1000,9 +1014,10 @@ async function renderAdminReclamaciones(pagina) {
                 <div style="font-size:.82rem;margin-bottom:.25rem"><strong>${r.reclamante?.nombre_completo||'—'}</strong> · ${r.reclamante?.correo||''}</div>
                 <div style="font-size:.79rem;margin-bottom:.35rem;color:var(--text3)">@${r.reclamante?.nombre_usuario||'—'}</div>
                 <div style="font-size:.8rem;color:var(--text2);display:flex;flex-direction:column;gap:.35rem">
+                  <div><strong>Cédula o carné:</strong> ${r.cedula_reclamante||'<em style="color:var(--text3)">No suministrado</em>'}</div>
                   <div><strong>¿Algún detalle especial del objeto?</strong><br>${r.respuesta_1||'<em style="color:var(--text3)">No respondido</em>'}</div>
-                  <div><strong>¿Cuándo y dónde lo perdiste?</strong><br>${r.respuesta_2||'<em style="color:var(--text3)">No respondido</em>'}</div>
-                  <div><strong>¿Alguna marca o contenido específico?</strong><br>${r.respuesta_3||'<em style="color:var(--text3)">No respondido</em>'}</div>
+                  <div><strong>Lugar donde lo perdió:</strong><br>${r.respuesta_2||'<em style="color:var(--text3)">No respondido</em>'}</div>
+                  <div><strong>Fecha y hora en que lo perdió:</strong><br>${r.respuesta_3||'<em style="color:var(--text3)">No respondido</em>'}</div>
                   <div><strong>Notas adicionales:</strong><br>${r.notas||'<em style="color:var(--text3)">Sin notas</em>'}</div>
                 </div>
                 ${r.ruta_evidencia?`<div style="margin-top:.5rem"><strong style="font-size:.8rem">Evidencia adjunta:</strong><br><img src="${r.ruta_evidencia}" style="height:120px;object-fit:cover;border-radius:6px;margin-top:.3rem"></div>` : '<div style="margin-top:.4rem;font-size:.79rem;color:var(--text3)"><em>Sin evidencia adjunta</em></div>'}
@@ -1031,6 +1046,93 @@ async function renderAdminReclamaciones(pagina) {
           if(!m){mostrarToast('Ingresa el motivo','error');return;}
           try{ await Reclamaciones.rechazar(b.dataset.rec,m); cerrar(); mostrarToast('Reclamación rechazada','info'); renderAdminReclamaciones(pagina); }
           catch(e){ mostrarToast(e.message,'error'); }
+        });
+      },50);
+    }));
+  } catch(e){ mostrarToast(e.message,'error'); }
+}
+
+async function renderAdminReclamos(pagina) {
+  pagina.innerHTML = `
+    <div class="banner-admin">
+      <div><h2>Reclamos aprobados</h2><p>Registra la entrega física del objeto al propietario aprobado</p></div>
+    </div>
+    <div id="listaReclamos"><div class="girador"></div></div>`;
+
+  try {
+    const lista = await Reclamaciones.aprobadas();
+    const el = document.getElementById('listaReclamos');
+    if (!lista?.length) { el.innerHTML=`<div class="estado-vacio"><h3>No hay reclamos aprobados pendientes de entrega</h3><p>Los reclamos aprobados aparecerán aquí para registrar su entrega.</p></div>`; return; }
+    el.innerHTML = `<div style="display:flex;flex-direction:column;gap:1rem">
+      ${lista.map(r=>`
+        <div style="background:#fff;border:2px solid #22c55e;border-radius:var(--radius-md);padding:1.2rem" id="rl-${r.id}">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:1rem">
+            <div style="flex:1;min-width:0">
+              <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.5rem">
+                <span class="insignia insignia-encontrado">✓ Aprobado</span>
+                <span style="font-size:.74rem;color:var(--text3)">Aprobado: ${r.revisado_en ? new Date(r.revisado_en).toLocaleString('es-CO') : '—'}</span>
+              </div>
+              <div style="font-weight:700;font-size:1.05rem;margin-bottom:.15rem">${r.reporte?.titulo||'Objeto'}</div>
+              <div style="font-size:.78rem;color:var(--text3);margin-bottom:.7rem">📍 ${r.reporte?.sede||''} ${r.reporte?.lugar_especifico?'— '+r.reporte.lugar_especifico:''}</div>
+              ${r.reporte?.ruta_imagen?`<img src="${r.reporte.ruta_imagen}" style="height:70px;object-fit:cover;border-radius:6px;margin-bottom:.6rem">` : ''}
+
+              <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:.7rem .9rem;margin-bottom:.5rem">
+                <div style="font-size:.72rem;font-weight:700;color:#166534;text-transform:uppercase;margin-bottom:.4rem">👤 Propietario aprobado</div>
+                <div style="font-size:.85rem;font-weight:600">${r.reclamante?.nombre_completo||'—'}</div>
+                <div style="font-size:.79rem;color:var(--text3)">${r.reclamante?.correo||''} · @${r.reclamante?.nombre_usuario||'—'}</div>
+                <div style="font-size:.8rem;margin-top:.35rem;color:var(--text2)">
+                  <strong>Cédula/Carné registrado:</strong>
+                  <span style="font-size:.9rem;font-weight:700;color:#166534;margin-left:.3rem">${r.cedula_reclamante||'No suministrado'}</span>
+                </div>
+              </div>
+
+              <div style="font-size:.75rem;color:var(--text3);margin-bottom:.5rem">
+                <strong>Datos suministrados:</strong>
+                ${r.respuesta_1?`<div>• Detalle: ${r.respuesta_1}</div>`:''}
+                ${r.respuesta_2?`<div>• Lugar: ${r.respuesta_2}</div>`:''}
+                ${r.respuesta_3?`<div>• Fecha/hora: ${r.respuesta_3}</div>`:''}
+              </div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:.4rem;flex-shrink:0;min-width:160px">
+              <button class="btn btn-purple btn-sm" data-entregar="${r.id}" data-cedula="${r.cedula_reclamante||''}" data-nombre="${r.reclamante?.nombre_completo||''}">📋 Registrar entrega</button>
+            </div>
+          </div>
+        </div>`).join('')}
+    </div>`;
+
+    el.querySelectorAll('[data-entregar]').forEach(b => b.addEventListener('click', ()=>{
+      const cedula = b.dataset.cedula;
+      const nombre = b.dataset.nombre;
+      const id = b.dataset.entregar;
+      const {cerrar} = crearModal({
+        titulo:'Registrar entrega del objeto',
+        contenido:`
+          <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:.7rem;margin-bottom:1rem;font-size:.82rem;color:#166534">
+            Introduce el número de cédula o carné del propietario para confirmar la entrega. Debe coincidir con el registrado en la solicitud.
+          </div>
+          <div class="campo-grupo">
+            <label class="campo-label req">Nombre del receptor</label>
+            <input id="nomRec" class="campo-input" value="${nombre}" placeholder="Nombre completo">
+          </div>
+          <div class="campo-grupo">
+            <label class="campo-label req">Cédula o carné</label>
+            <input id="docRec" class="campo-input" placeholder="Solo números" inputmode="numeric" value="${cedula}">
+            ${cedula?`<div style="font-size:.75rem;color:var(--text3);margin-top:.3rem">Cédula registrada en solicitud: <strong>${cedula}</strong></div>`:''}
+          </div>`,
+        pie:`<button class="btn btn-borde btn-sm" id="cxE">Cancelar</button><button class="btn btn-purple btn-sm" id="okE">Confirmar entrega</button>`
+      });
+      setTimeout(()=>{
+        document.getElementById('cxE')?.addEventListener('click',cerrar);
+        document.getElementById('okE')?.addEventListener('click', async ()=>{
+          const nom = document.getElementById('nomRec')?.value?.trim();
+          const doc = document.getElementById('docRec')?.value?.trim();
+          if(!nom||!doc){mostrarToast('Completa todos los campos','error');return;}
+          try{
+            await Reclamaciones.registrarEntrega(id, {nombre_receptor: nom, documento_receptor: doc});
+            cerrar();
+            mostrarToast('¡Entrega registrada! El objeto quedó como Reclamado.','success');
+            renderAdminReclamos(pagina);
+          } catch(e){ mostrarToast(e.message,'error'); }
         });
       },50);
     }));
@@ -1125,16 +1227,38 @@ async function abrirPanelNotif(e) {
     <div class="panel-notif-lista"><div class="girador" style="margin:1rem auto;width:26px;height:26px;border-width:2px"></div></div>`;
   btn?.parentElement?.appendChild(panel);
 
+  const destinos = {
+    reclamo_nuevo: estado.usuario?.rol === 'admin' ? 'admin-reclamaciones' : 'mis-reportes',
+    reclamo_aprobado: 'mis-reportes',
+    reclamo_rechazado: 'mis-reportes',
+    coincidencia: 'mis-reportes',
+    estado_cambiado: 'mis-reportes',
+    reporte_aprobado: 'mis-reportes',
+    reporte_rechazado: 'mis-reportes',
+    entrega_lista: 'mis-reportes',
+  };
+
   try {
     const lista = await Notificaciones.listar({ limite: 10 });
-    const iconos = { coincidencia:'🔍',reclamo_nuevo:'📩',reclamo_aprobado:'✅',reclamo_rechazado:'❌',estado_cambiado:'🔄',entrega_lista:'📦' };
+    const iconos = { coincidencia:'🔍',reclamo_nuevo:'📩',reclamo_aprobado:'✅',reclamo_rechazado:'❌',estado_cambiado:'🔄',reporte_aprobado:'✅',reporte_rechazado:'❌',entrega_lista:'📦' };
     const el = panel.querySelector('.panel-notif-lista');
     el.innerHTML = lista.length
-      ? lista.map(n=>`<div class="notif-item ${n.leida?'':'no-leida'}">
+      ? lista.map(n=>`<div class="notif-item ${n.leida?'':'no-leida'}" data-id="${n.id}" data-tipo="${n.tipo}" style="cursor:pointer">
           <div class="notif-icono">${iconos[n.tipo]||'🔔'}</div>
           <div><div class="notif-titulo">${n.titulo}</div><div class="notif-msg">${n.mensaje}</div><div class="notif-hora">${tiempoRelativo(n.creado_en)}</div></div>
         </div>`).join('')
       : `<div style="padding:1.5rem;text-align:center;color:var(--text3);font-size:.875rem">Sin notificaciones nuevas</div>`;
+
+    el.querySelectorAll('.notif-item[data-id]').forEach(item => {
+      item.addEventListener('click', async () => {
+        panel.remove();
+        const tipo = item.dataset.tipo;
+        const id = item.dataset.id;
+        try { await Notificaciones.marcarLeida(parseInt(id)); } catch(_) {}
+        const vista = destinos[tipo] || 'notificaciones';
+        navegar(vista);
+      });
+    });
   } catch(_){}
 
   document.getElementById('btnVerTodas')?.addEventListener('click',()=>{ panel.remove(); navegar('notificaciones'); });
@@ -1529,8 +1653,8 @@ async function iniciarPolling() {
       if (g) { g.textContent = cantidad > 9 ? '9+' : cantidad; g.classList.toggle('oculto', cantidad === 0); }
     } catch(_){}
   };
-  await act();
-  estado.intervaloNotif = setInterval(act, 20000);
+  act(); // fire and forget
+  estado.intervaloNotif = setInterval(act, 15000);
 }
 
 function detenerPolling() {

@@ -98,7 +98,7 @@ class ServicioReporte:
         """HU07 — Editar reporte propio."""
         reporte = self._obtener_o_error(id_reporte)
         self._validar_propietario_o_admin(reporte, usuario)
-        if reporte.estado in (EstadoObjeto.RECLAMADO, EstadoObjeto.ENTREGADO):
+        if reporte.estado in (EstadoObjeto.RECLAMADO, EstadoObjeto.ENTREGADO, EstadoObjeto.EN_REVISION, EstadoObjeto.APROBADO):
             raise HTTPException(400, "No se puede editar un reporte con reclamación activa")
         for campo, valor in datos.model_dump(exclude_none=True).items():
             setattr(reporte, campo, valor)
@@ -112,7 +112,7 @@ class ServicioReporte:
         """HU13 — Cancelar publicación propia."""
         reporte = self._obtener_o_error(id_reporte)
         self._validar_propietario_o_admin(reporte, usuario)
-        if reporte.estado in (EstadoObjeto.RECLAMADO, EstadoObjeto.ENTREGADO):
+        if reporte.estado in (EstadoObjeto.RECLAMADO, EstadoObjeto.ENTREGADO, EstadoObjeto.EN_REVISION, EstadoObjeto.APROBADO):
             raise HTTPException(400, "No se puede cancelar con reclamación activa")
         estado_anterior = reporte.estado
         reporte.estado = EstadoObjeto.CANCELADO

@@ -46,6 +46,7 @@ class ServicioReclamacion:
 
         reclamacion = Reclamacion(
             id_reporte=id_reporte, id_reclamante=reclamante.id,
+            cedula_reclamante=datos.cedula_reclamante,
             respuesta_1=datos.respuesta_1, respuesta_2=datos.respuesta_2,
             respuesta_3=datos.respuesta_3, notas=datos.notas,
         )
@@ -62,7 +63,7 @@ class ServicioReclamacion:
             reclamacion.ruta_evidencia = f"/uploads/evidencias/{nombre}"
             self.repo.actualizar(reclamacion)
 
-        reporte.estado = EstadoObjeto.RECLAMADO
+        reporte.estado = EstadoObjeto.EN_REVISION
         self.repo_rep.actualizar(reporte)
 
         self.repo_notif.crear_notificacion(
@@ -71,7 +72,6 @@ class ServicioReclamacion:
             mensaje=f"{reclamante.nombre_completo} quiere reclamar tu objeto '{reporte.titulo}'.",
             id_reporte=id_reporte, id_reclamo=reclamacion.id,
         )
-        # Notificar a todos los admins
         for admin in self.repo_usr.obtener_admins():
             self.repo_notif.crear_notificacion(
                 id_usuario=admin.id, tipo=TipoNotificacion.RECLAMO_NUEVO,
@@ -95,8 +95,10 @@ class ServicioReclamacion:
             reclamacion.estado = EstadoReclamacion.APROBADA
             reclamacion.id_revisado_por = admin.id
             reclamacion.revisado_en = datetime.utcnow()
+            reporte.estado = EstadoObjeto.APROBADO
+            self.repo_rep.actualizar(reporte)
             tipo_notif = TipoNotificacion.RECLAMO_APROBADO
-            mensaje = f"Tu reclamación para '{reporte.titulo}' fue aprobada. Preséntate con tu documento."
+            mensaje = f"Tu reclamación para '{reporte.titulo}' fue aprobada. Preséntate con tu documento de identidad."
         else:
             if not datos.motivo_rechazo:
                 raise HTTPException(400, "Debes indicar el motivo del rechazo")
@@ -119,12 +121,14 @@ class ServicioReclamacion:
 
     def registrar_entrega(self, id_reclamacion: int, datos: EsquemaRegistrarEntrega,
                           admin: Usuario) -> Reclamacion:
-        """HU28/HU36 — Registrar entrega física y cambiar estado automáticamente."""
+        """HU28/HU36 — Registrar entrega física y cambiar estado a Reclamado."""
         if admin.rol not in (RolUsuario.ADMIN, RolUsuario.CUSTODIA):
             raise HTTPException(403, "Sin permiso")
         reclamacion = self._reclamacion_o_error(id_reclamacion)
         if reclamacion.estado != EstadoReclamacion.APROBADA:
             raise HTTPException(400, "La reclamación debe estar aprobada para registrar entrega")
+        if reclamacion.cedula_reclamante and datos.documento_receptor != reclamacion.cedula_reclamante:
+            raise HTTPException(400, "El número de documento no coincide con el registrado en la solicitud de reclamación")
 
         reclamacion.estado = EstadoReclamacion.ENTREGADA
         reclamacion.nombre_receptor = datos.nombre_receptor
@@ -132,15 +136,14 @@ class ServicioReclamacion:
         reclamacion.fecha_entrega = datetime.utcnow()
         self.repo.actualizar(reclamacion)
 
-        # HU36 — Cambio automático de estado del reporte
         reporte = self._reporte_o_error(reclamacion.id_reporte)
-        reporte.estado = EstadoObjeto.ENTREGADO
+        reporte.estado = EstadoObjeto.RECLAMADO
         self.repo_rep.actualizar(reporte)
 
         self.repo_notif.crear_notificacion(
             id_usuario=reclamacion.id_reclamante, tipo=TipoNotificacion.ENTREGA_LISTA,
-            titulo="¡Objeto entregado!",
-            mensaje=f"La entrega de '{reporte.titulo}' fue registrada exitosamente.",
+            titulo="¡Objeto reclamado exitosamente!",
+            mensaje=f"La entrega de '{reporte.titulo}' fue registrada. ¡El objeto fue reclamado!",
             id_reporte=reporte.id, id_reclamo=reclamacion.id,
         )
         return reclamacion
@@ -158,6 +161,11 @@ class ServicioReclamacion:
         if admin.rol not in (RolUsuario.ADMIN, RolUsuario.CUSTODIA):
             raise HTTPException(403, "Sin permiso")
         return self.repo.obtener_pendientes()
+
+    def reclamaciones_aprobadas(self, admin: Usuario) -> List[Reclamacion]:
+        if admin.rol not in (RolUsuario.ADMIN, RolUsuario.CUSTODIA):
+            raise HTTPException(403, "Sin permiso")
+        return self.repo.obtener_aprobadas()
 
     def _reclamacion_o_error(self, id_reclamacion: int) -> Reclamacion:
         r = self.repo.obtener_por_id(id_reclamacion)

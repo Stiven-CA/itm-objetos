@@ -20,6 +20,7 @@ class Reclamacion(Base):
     id_reporte            = Column(Integer, ForeignKey("reportes.id"), nullable=False)
     id_reclamante         = Column(Integer, ForeignKey("usuarios.id"), nullable=False)
     estado                = Column(Enum(EstadoReclamacion), default=EstadoReclamacion.PENDIENTE)
+    cedula_reclamante     = Column(String(50), nullable=True)
     respuesta_1           = Column(Text, nullable=True)
     respuesta_2           = Column(Text, nullable=True)
     respuesta_3           = Column(Text, nullable=True)

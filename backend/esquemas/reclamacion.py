@@ -6,6 +6,7 @@ from backend.modelos.reclamacion import EstadoReclamacion
 
 
 class EsquemaCrearReclamacion(BaseModel):
+    cedula_reclamante: Optional[str] = None
     respuesta_1: Optional[str] = None
     respuesta_2: Optional[str] = None
     respuesta_3: Optional[str] = None
@@ -53,6 +54,7 @@ class EsquemaReclamacion(BaseModel):
     id: int
     id_reporte: int
     estado: EstadoReclamacion
+    cedula_reclamante: Optional[str]
     notas: Optional[str]
     respuesta_1: Optional[str]
     respuesta_2: Optional[str]
@@ -60,6 +62,7 @@ class EsquemaReclamacion(BaseModel):
     ruta_evidencia: Optional[str]
     motivo_rechazo: Optional[str]
     nombre_receptor: Optional[str]
+    documento_receptor: Optional[str]
     fecha_entrega: Optional[datetime]
     creado_en: datetime
     actualizado_en: datetime
