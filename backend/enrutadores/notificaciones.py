@@ -11,7 +11,7 @@ from backend.repositorios.repositorio_notificacion import RepositorioNotificacio
 enrutador = APIRouter(prefix="/notificaciones", tags=["Notificaciones"])
 
 
-@enrutador.get("/", response_model=List[EsquemaNotificacion])
+@enrutador.get("", response_model=List[EsquemaNotificacion])
 def listar_notificaciones(
     saltar: int = Query(0, ge=0),
     limite: int = Query(50, le=100),
@@ -19,7 +19,9 @@ def listar_notificaciones(
     sesion: Session = Depends(obtener_sesion),
 ):
     """HU20 — Historial de notificaciones."""
-    return RepositorioNotificacion(sesion).obtener_del_usuario(usuario.id, saltar, limite)
+    return RepositorioNotificacion(sesion).obtener_del_usuario(
+        usuario.id, saltar, limite
+    )
 
 
 @enrutador.get("/no-leidas")

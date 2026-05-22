@@ -54,6 +54,7 @@ function renderApp() {
 
   renderSidebar();
   renderHeader();
+  if (estado.usuario) actualizarBadgeNotif();
   renderFiltros();
   renderBusqueda();
   renderFooter();
@@ -554,45 +555,58 @@ async function renderNotificaciones(pagina) {
     <div id="listaNot"><div class="girador"></div></div>`;
 
   document.getElementById('btnMarcarTodas')?.addEventListener('click', async () => {
-    await Notificaciones.marcarTodasLeidas(); renderNotificaciones(pagina);
+    await Notificaciones.marcarTodasLeidas();
+    renderNotificaciones(pagina);
   });
+
+  const iconos = { coincidencia:'🔍', reclamo_nuevo:'📩', reclamo_aprobado:'✅', reclamo_rechazado:'❌', estado_cambiado:'🔄', reporte_aprobado:'✅', reporte_rechazado:'❌', entrega_lista:'📦' };
+  const destinos = {
+    reclamo_nuevo: estado.usuario?.rol === 'admin' ? 'admin-reclamaciones' : 'mis-reportes',
+    reclamo_aprobado: 'mis-reportes', reclamo_rechazado: 'mis-reportes',
+    coincidencia: 'mis-reportes', estado_cambiado: 'mis-reportes',
+    reporte_aprobado: 'mis-reportes', reporte_rechazado: 'mis-reportes', entrega_lista: 'mis-reportes',
+  };
+
+  let lista;
   try {
-    const lista = await Notificaciones.listar();
-    const cont  = document.getElementById('listaNot');
-    if (!lista.length) { cont.innerHTML = `<div class="estado-vacio"><h3>Sin notificaciones</h3><p>Todo tranquilo por ahora.</p></div>`; return; }
-    const iconos = { coincidencia:'🔍', reclamo_nuevo:'📩', reclamo_aprobado:'✅', reclamo_rechazado:'❌', estado_cambiado:'🔄', reporte_aprobado:'✅', reporte_rechazado:'❌', entrega_lista:'📦' };
-    const destinos = {
-      reclamo_nuevo: estado.usuario?.rol === 'admin' ? 'admin-reclamaciones' : 'mis-reportes',
-      reclamo_aprobado: 'mis-reportes', reclamo_rechazado: 'mis-reportes',
-      coincidencia: 'mis-reportes', estado_cambiado: 'mis-reportes',
-      reporte_aprobado: 'mis-reportes', reporte_rechazado: 'mis-reportes', entrega_lista: 'mis-reportes',
-    };
-    cont.innerHTML = `
-      <div style="background:#fff;border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden">
-        ${lista.map(n => `
-          <div class="notif-item ${n.leida?'':'no-leida'}" data-id="${n.id}" data-tipo="${n.tipo}" style="cursor:pointer">
-            <div class="notif-icono">${iconos[n.tipo]||'🔔'}</div>
-            <div style="flex:1;min-width:0">
-              <div class="notif-titulo">${n.titulo}</div>
-              <div class="notif-msg">${n.mensaje}</div>
-              <div class="notif-hora">${tiempoRelativo(n.creado_en)}</div>
-            </div>
-            ${!n.leida ? '<div style="width:8px;height:8px;border-radius:50%;background:var(--blue);flex-shrink:0;margin-top:6px"></div>' : ''}
-          </div>`).join('')}
-      </div>`;
-    cont.querySelectorAll('.notif-item').forEach(it => {
-      it.addEventListener('click', async () => {
-        await Notificaciones.marcarLeida(parseInt(it.dataset.id));
-        const vista = destinos[it.dataset.tipo] || 'mis-reportes';
-        navegar(vista);
-      });
+    lista = await Notificaciones.listar();
+  } catch(err) {
+    if (!pagina.isConnected) return;
+    document.getElementById('listaNot').innerHTML = `<div class="estado-vacio"><h3>Error al cargar</h3><p>${err.message}</p></div>`;
+    return;
+  }
+
+  if (!pagina.isConnected) return;
+  const cont = document.getElementById('listaNot');
+  if (!cont) return;
+
+  if (!lista || !lista.length) {
+    cont.innerHTML = `<div class="estado-vacio"><h3>Sin notificaciones</h3><p>Todo tranquilo por ahora.</p></div>`;
+    return;
+  }
+
+  cont.innerHTML = `
+    <div style="background:#fff;border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden">
+      ${lista.map(n => `
+        <div class="notif-item ${n.leida ? '' : 'no-leida'}" data-id="${n.id}" data-tipo="${n.tipo}" style="cursor:pointer">
+          <div class="notif-icono">${iconos[n.tipo] || '🔔'}</div>
+          <div style="flex:1;min-width:0">
+            <div class="notif-titulo">${n.titulo}</div>
+            <div class="notif-msg">${n.mensaje}</div>
+            <div class="notif-hora">${tiempoRelativo(n.creado_en)}</div>
+          </div>
+          ${!n.leida ? '<div style="width:8px;height:8px;border-radius:50%;background:#3b82f6;flex-shrink:0;align-self:center"></div>' : ''}
+        </div>`).join('')}
+    </div>`;
+
+  cont.querySelectorAll('.notif-item').forEach(it => {
+    it.addEventListener('click', async () => {
+      try { await Notificaciones.marcarLeida(parseInt(it.dataset.id)); } catch(_) {}
+      navegar(destinos[it.dataset.tipo] || 'mis-reportes');
     });
-  } catch (err) { mostrarToast(err.message,'error'); }
+  });
 }
 
-/* ═══════════════════════════════════════════════════
-   PREFERENCIAS DE NOTIFICACIÓN
-═══════════════════════════════════════════════════ */
 function renderPreferencias(pagina) {
   pagina.innerHTML = `
     <div style="max-width:680px">
@@ -1224,47 +1238,57 @@ async function abrirPanelNotif(e) {
       <span class="panel-notif-titulo">Notificaciones</span>
       <button class="btn btn-sm btn-borde" id="btnVerTodas">Ver todas</button>
     </div>
-    <div class="panel-notif-lista"><div class="girador" style="margin:1rem auto;width:26px;height:26px;border-width:2px"></div></div>`;
+    <div class="panel-notif-lista" id="panelNotifLista">
+      <div style="padding:1.5rem;text-align:center">
+        <div class="girador" style="margin:0 auto;width:24px;height:24px;border-width:2px"></div>
+      </div>
+    </div>`;
   btn?.parentElement?.appendChild(panel);
 
+  document.getElementById('btnVerTodas')?.addEventListener('click', () => { panel.remove(); navegar('notificaciones'); });
+  const cerrar = ev => { if (!panel.contains(ev.target) && ev.target !== btn) { panel.remove(); document.removeEventListener('click', cerrar); } };
+  setTimeout(() => document.addEventListener('click', cerrar), 50);
+
+  const iconos = { coincidencia:'🔍', reclamo_nuevo:'📩', reclamo_aprobado:'✅', reclamo_rechazado:'❌', estado_cambiado:'🔄', reporte_aprobado:'✅', reporte_rechazado:'❌', entrega_lista:'📦' };
   const destinos = {
     reclamo_nuevo: estado.usuario?.rol === 'admin' ? 'admin-reclamaciones' : 'mis-reportes',
-    reclamo_aprobado: 'mis-reportes',
-    reclamo_rechazado: 'mis-reportes',
-    coincidencia: 'mis-reportes',
-    estado_cambiado: 'mis-reportes',
-    reporte_aprobado: 'mis-reportes',
-    reporte_rechazado: 'mis-reportes',
-    entrega_lista: 'mis-reportes',
+    reclamo_aprobado: 'mis-reportes', reclamo_rechazado: 'mis-reportes',
+    coincidencia: 'mis-reportes', estado_cambiado: 'mis-reportes',
+    reporte_aprobado: 'mis-reportes', reporte_rechazado: 'mis-reportes', entrega_lista: 'mis-reportes',
   };
 
   try {
     const lista = await Notificaciones.listar({ limite: 10 });
-    const iconos = { coincidencia:'🔍',reclamo_nuevo:'📩',reclamo_aprobado:'✅',reclamo_rechazado:'❌',estado_cambiado:'🔄',reporte_aprobado:'✅',reporte_rechazado:'❌',entrega_lista:'📦' };
-    const el = panel.querySelector('.panel-notif-lista');
-    el.innerHTML = lista.length
-      ? lista.map(n=>`<div class="notif-item ${n.leida?'':'no-leida'}" data-id="${n.id}" data-tipo="${n.tipo}" style="cursor:pointer">
-          <div class="notif-icono">${iconos[n.tipo]||'🔔'}</div>
-          <div><div class="notif-titulo">${n.titulo}</div><div class="notif-msg">${n.mensaje}</div><div class="notif-hora">${tiempoRelativo(n.creado_en)}</div></div>
-        </div>`).join('')
-      : `<div style="padding:1.5rem;text-align:center;color:var(--text3);font-size:.875rem">Sin notificaciones nuevas</div>`;
-
+    const el = document.getElementById('panelNotifLista');
+    if (!el) return;
+    if (!lista || !lista.length) {
+      el.innerHTML = `<div style="padding:1.5rem;text-align:center;color:var(--text3);font-size:.875rem">Sin notificaciones nuevas</div>`;
+      return;
+    }
+    el.innerHTML = lista.map(n => `
+      <div class="notif-item ${n.leida ? '' : 'no-leida'}" data-id="${n.id}" data-tipo="${n.tipo}" style="cursor:pointer">
+        <div class="notif-icono">${iconos[n.tipo] || '🔔'}</div>
+        <div style="flex:1;min-width:0">
+          <div class="notif-titulo">${n.titulo}</div>
+          <div class="notif-msg">${n.mensaje}</div>
+          <div class="notif-hora">${tiempoRelativo(n.creado_en)}</div>
+        </div>
+        ${!n.leida ? '<div style="width:8px;height:8px;border-radius:50%;background:#3b82f6;flex-shrink:0;align-self:center"></div>' : ''}
+      </div>`).join('');
     el.querySelectorAll('.notif-item[data-id]').forEach(item => {
       item.addEventListener('click', async () => {
         panel.remove();
-        const tipo = item.dataset.tipo;
-        const id = item.dataset.id;
-        try { await Notificaciones.marcarLeida(parseInt(id)); } catch(_) {}
-        const vista = destinos[tipo] || 'notificaciones';
-        navegar(vista);
+        document.removeEventListener('click', cerrar);
+        try { await Notificaciones.marcarLeida(parseInt(item.dataset.id)); } catch(_) {}
+        navegar(destinos[item.dataset.tipo] || 'notificaciones');
       });
     });
-  } catch(_){}
-
-  document.getElementById('btnVerTodas')?.addEventListener('click',()=>{ panel.remove(); navegar('notificaciones'); });
-  const cerrar = ev => { if(!panel.contains(ev.target)&&ev.target!==btn){ panel.remove(); document.removeEventListener('click',cerrar); } };
-  setTimeout(()=>document.addEventListener('click',cerrar),50);
+  } catch(err) {
+    const el = document.getElementById('panelNotifLista');
+    if (el) el.innerHTML = `<div style="padding:1rem;text-align:center;color:#ef4444;font-size:.8rem">Error al cargar notificaciones</div>`;
+  }
 }
+
 
 /* ═══════════════════════════════════════════════════
    AUTH — LOGIN PASO A PASO
@@ -1644,17 +1668,18 @@ function toggleSidebar() {
   document.body.appendChild(overlay);
 }
 
+async function actualizarBadgeNotif() {
+  try {
+    const { cantidad } = await Notificaciones.cantidadNoLeidas();
+    const g = document.getElementById('globoNotif');
+    if (g) { g.textContent = cantidad > 9 ? '9+' : cantidad; g.classList.toggle('oculto', cantidad === 0); }
+  } catch(_){}
+}
+
 async function iniciarPolling() {
-  if (estado.intervaloNotif) return; // ya está corriendo
-  const act = async () => {
-    try {
-      const { cantidad } = await Notificaciones.cantidadNoLeidas();
-      const g = document.getElementById('globoNotif');
-      if (g) { g.textContent = cantidad > 9 ? '9+' : cantidad; g.classList.toggle('oculto', cantidad === 0); }
-    } catch(_){}
-  };
-  act(); // fire and forget
-  estado.intervaloNotif = setInterval(act, 15000);
+  actualizarBadgeNotif();
+  if (estado.intervaloNotif) return;
+  estado.intervaloNotif = setInterval(actualizarBadgeNotif, 15000);
 }
 
 function detenerPolling() {

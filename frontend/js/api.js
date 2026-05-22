@@ -104,7 +104,7 @@ export const Reclamaciones = {
 
 // ── Notificaciones ────────────────────────────────────────
 export const Notificaciones = {
-  listar:          (p = {}) => peticion('GET',  '/notificaciones?' + new URLSearchParams(p)),
+  listar:          (p = {}) => { const qs = new URLSearchParams(Object.fromEntries(Object.entries(p).filter(([,v]) => v != null))).toString(); return peticion('GET', '/notificaciones' + (qs ? '?' + qs : '')); },
   cantidadNoLeidas:()       => peticion('GET',  '/notificaciones/no-leidas'),
   marcarTodasLeidas:()      => peticion('POST', '/notificaciones/marcar-todas-leidas'),
   marcarLeida:     (id)     => peticion('POST', `/notificaciones/${id}/marcar-leida`),

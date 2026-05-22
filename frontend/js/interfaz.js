@@ -75,8 +75,8 @@ export function mostrarConfirmacion(mensaje, alAceptar, alCancelar = null) {
 const ETIQUETAS_ESTADO = {
   perdido:     { texto: 'Perdido',      clase: 'insignia-perdido' },
   encontrado:  { texto: 'Encontrado',   clase: 'insignia-encontrado' },
-  en_revision: { texto: 'En revisión',  clase: 'insignia-reclamado' },
-  aprobado:    { texto: 'Aprobado',     clase: 'insignia-encontrado' },
+  en_revision: { texto: 'En revisión',  clase: 'insignia-en-revision' },
+  aprobado:    { texto: 'Aprobado',     clase: 'insignia-aprobado' },
   reclamado:   { texto: 'Reclamado',    clase: 'insignia-reclamado' },
   entregado:   { texto: 'Entregado',    clase: 'insignia-entregado' },
   cancelado:   { texto: 'Cancelado',    clase: 'insignia-cancelado' },
